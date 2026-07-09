@@ -1,0 +1,14 @@
+# Credenciales y secretos (NUNCA subir)
+.streamlit/secrets.toml
+.streamlit/client_secret.json
+.streamlit/authorized_user.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# IDE
+.vscode/
+.idea/
