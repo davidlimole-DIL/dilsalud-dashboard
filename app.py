@@ -54,17 +54,16 @@ st.markdown("""
 
     html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #f8fafc;
     }
 
     /* ── KPI Cards ── */
     .kpi-card {
         border-radius: 16px; 
         padding: 22px 16px; 
-        color: #1e293b;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+        background: var(--secondary-background-color, #ffffff);
+        color: var(--text-color, #1e293b);
+        border: 1px solid rgba(128, 128, 128, 0.15);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
         transition: all 0.2s ease-in-out;
         margin-bottom: 15px;
         position: relative;
@@ -72,7 +71,7 @@ st.markdown("""
     }
     .kpi-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
     }
     .kpi-card::before {
         content: "";
@@ -93,11 +92,12 @@ st.markdown("""
         font-weight: 800; 
         margin: 0; 
         line-height: 1.1; 
-        color: #0f172a;
+        color: var(--text-color, #0f172a);
     }
     .kpi-label { 
         font-size: 11px; 
-        color: #64748b; 
+        color: var(--text-color, #64748b); 
+        opacity: 0.8;
         margin-top: 5px;
         font-weight: 700;
         text-transform: uppercase; 
@@ -110,11 +110,11 @@ st.markdown("""
         justify-content: space-between;
         align-items: center;
         padding: 20px 24px;
-        background: #ffffff;
+        background: var(--secondary-background-color, #ffffff);
         border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
         margin-bottom: 25px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid rgba(128, 128, 128, 0.15);
         border-left: 5px solid #1e3b8b;
     }
     .header-logo-title {
@@ -123,29 +123,24 @@ st.markdown("""
         gap: 20px;
     }
     .client-logo {
-        height: 55px;
+        height: 75px;
         object-fit: contain;
     }
     .header-text {
         display: flex;
         flex-direction: column;
     }
-    .header-title {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 800;
-        color: #1e3b8b;
-    }
     .header-subtitle {
-        margin: 2px 0 0 0;
-        font-size: 12px;
-        color: #64748b;
-        font-weight: 500;
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-color, #64748b);
+        font-weight: 600;
+        opacity: 0.9;
     }
     .sync-badge {
-        background: #f0fdf4;
+        background: rgba(21, 128, 61, 0.1);
         color: #15803d;
-        border: 1px solid #bbf7d0;
+        border: 1px solid rgba(21, 128, 61, 0.2);
         padding: 6px 12px;
         border-radius: 20px;
         font-size: 10px;
@@ -165,7 +160,7 @@ st.markdown("""
     }
     .footer-divider {
         height: 1px;
-        background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+        background: linear-gradient(90deg, transparent, rgba(128, 128, 128, 0.2), transparent);
         margin-bottom: 15px;
     }
     .footer-content {
@@ -202,8 +197,7 @@ st.markdown("""
 
     /* ── Sidebar ── */
     section[data-testid="stSidebar"] { 
-        background: #f1f5f9; 
-        border-right: 1px solid #e2e8f0;
+        border-right: 1px solid rgba(128, 128, 128, 0.15);
     }
 
     /* ── Tab styles override ── */
@@ -236,13 +230,10 @@ st.markdown("""
             gap: 12px;
         }
         .client-logo {
-            height: 40px;
-        }
-        .header-title {
-            font-size: 18px;
+            height: 55px;
         }
         .header-subtitle {
-            font-size: 11px;
+            font-size: 12px;
         }
         .kpi-value { font-size: 26px; }
         .kpi-label { font-size: 9px; }
@@ -611,10 +602,8 @@ else:
 with st.sidebar:
     logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
     if logo_client_b64:
-        st.markdown(f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{logo_client_b64}" style="width: 140px; object-fit: contain;"></div>', unsafe_allow_html=True)
-    else:
-        st.markdown("### 🏥 DIL-Salud")
-    st.caption("Dashboard de Logística Médica")
+        st.markdown(f'<div style="text-align: center; margin-bottom: 15px;"><img src="data:image/png;base64,{logo_client_b64}" style="width: 150px; object-fit: contain;"></div>', unsafe_allow_html=True)
+    st.caption("Control de Traslados")
     st.markdown("---")
 
     st.markdown("##### 📅 Fecha (Monitor Diario)")
@@ -658,7 +647,6 @@ st.markdown(f"""
     <div class="header-logo-title">
         {logo_client_html}
         <div class="header-text">
-            <h1 class="header-title">DIL-Salud</h1>
             <p class="header-subtitle">Control y Logística de Pacientes Hematológicos</p>
         </div>
     </div>
