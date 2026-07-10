@@ -5,6 +5,9 @@
 # Mejoras v2:  Responsive mobile, Excepciones, Acumulado mensual
 # ============================================================
 
+import faulthandler
+faulthandler.enable()
+
 import os
 import re
 import json
