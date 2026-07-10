@@ -621,27 +621,28 @@ else:
 with st.sidebar:
     logo_client_b64 = get_base64_logo("logo.png")
     if logo_client_b64:
-        st.markdown(f'<div style="text-align: center; margin-bottom: 15px;"><img src="data:image/png;base64,{logo_client_b64}" style="width: 150px; object-fit: contain;"></div>', unsafe_allow_html=True)
-    st.caption("Control de Traslados")
-    st.markdown("---")
+        st.markdown(f'<div style="text-align: center; margin-bottom: 5px;"><img src="data:image/png;base64,{logo_client_b64}" style="width: 140px; object-fit: contain;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; font-size: 11px; font-weight: 600; color: var(--text-color); opacity: 0.7; margin-bottom: 8px;">Control de Traslados</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div style="margin: 4px 0; border-top: 1px solid rgba(128,128,128,0.15)"></div>', unsafe_allow_html=True)
 
-    st.markdown("##### 📅 Fecha (Monitor Diario)")
+    st.markdown('<div style="font-size: 12px; font-weight: 700; color: var(--text-color); margin-bottom: 4px;">📅 Fecha (Monitor Diario)</div>', unsafe_allow_html=True)
     fecha_sel = st.date_input("Fecha", value=date.today(), format="DD/MM/YYYY",
                               label_visibility="collapsed")
 
-    st.markdown("---")
-    st.markdown("##### 🎯 Filtros")
+    st.markdown('<div style="margin: 4px 0; border-top: 1px solid rgba(128,128,128,0.15)"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="font-size: 12px; font-weight: 700; color: var(--text-color); margin-bottom: 4px;">🎯 Filtros</div>', unsafe_allow_html=True)
     turnos_filtro = st.multiselect("Turnos", turnos_disp, default=turnos_disp,
-                                   placeholder="Todos")
+                                   placeholder="Todos", label_visibility="collapsed")
     moviles_filtro = st.multiselect("Móviles", moviles_disp, default=moviles_disp,
-                                    placeholder="Todos")
+                                    placeholder="Todos", label_visibility="collapsed")
 
-    st.markdown("---")
+    st.markdown('<div style="margin: 4px 0; border-top: 1px solid rgba(128,128,128,0.15)"></div>', unsafe_allow_html=True)
     if st.button("🔄  Sincronizar Datos", use_container_width=True, type="primary"):
         st.cache_data.clear()
         st.rerun()
 
-    st.markdown("---")
+    st.markdown('<div style="margin: 4px 0; border-top: 1px solid rgba(128,128,128,0.15)"></div>', unsafe_allow_html=True)
     logo_dil_b64 = get_base64_logo("logoDIL1transp.png")
     dil_logo_html = f'<img src="data:image/png;base64,{logo_dil_b64}" class="dil-logo" style="height: 18px;">' if logo_dil_b64 else '<span>DIL Digital</span>'
     st.markdown(f"""
