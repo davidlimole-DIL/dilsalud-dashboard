@@ -56,13 +56,13 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* Hide Streamlit top bar to prevent overlapping/clipping */
+    /* Make Streamlit top bar transparent to keep the sidebar toggle button visible */
     [data-testid="stHeader"] {
-        display: none !important;
+        background-color: transparent !important;
     }
 
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 3.5rem !important;
         padding-bottom: 2rem !important;
     }
 
