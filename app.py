@@ -118,7 +118,7 @@ st.markdown("""
         background: var(--secondary-background-color, #ffffff);
         border-radius: 16px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-        margin-top: -3.5rem !important;
+        margin-top: 0rem !important;
         margin-bottom: 25px;
         border: 1px solid rgba(128, 128, 128, 0.15);
         border-left: 5px solid #1e3b8b;
@@ -323,16 +323,15 @@ def verificar_acceso():
     if st.session_state.get("autenticado"):
         return
 
-    logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
+    logo_client_b64 = get_base64_logo("logo.png")
     logo_dil_b64 = get_base64_logo("logoDIL1transp.png")
 
-    client_logo_html = f'<img src="data:image/png;base64,{logo_client_b64}" style="height: 100px; object-fit: contain; margin-bottom: 20px;">' if logo_client_b64 else '🏥'
+    client_logo_html = f'<img src="data:image/png;base64,{logo_client_b64}" style="height: 130px; object-fit: contain; margin-bottom: 25px;">' if logo_client_b64 else '🏥'
 
     st.markdown(f"""
     <div style="text-align: center; margin-top: 50px;">
         {client_logo_html}
-        <h2 style="color: #1e3b8b; font-weight: 800; margin: 0; font-size: 26px;">DIL-Salud</h2>
-        <p style="color: #64748b; font-size: 13px; margin-top: 5px; margin-bottom: 30px; font-weight: 500;">Dashboard de Logística Médica</p>
+        <p style="color: var(--text-color); opacity: 0.8; font-size: 14px; margin-top: 5px; margin-bottom: 30px; font-weight: 600;">Control y Logística de Pacientes Hematológicos</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -607,7 +606,7 @@ else:
     moviles_disp = []
 
 with st.sidebar:
-    logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
+    logo_client_b64 = get_base64_logo("logo.png")
     if logo_client_b64:
         st.markdown(f'<div style="text-align: center; margin-bottom: 15px;"><img src="data:image/png;base64,{logo_client_b64}" style="width: 150px; object-fit: contain;"></div>', unsafe_allow_html=True)
     st.caption("Control de Traslados")
@@ -646,7 +645,7 @@ with st.sidebar:
 # 10. HEADER
 # ============================================================
 hora_sync = datetime.now().strftime("%H:%M:%S")
-logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
+logo_client_b64 = get_base64_logo("logo.png")
 logo_client_html = f'<img src="data:image/png;base64,{logo_client_b64}" class="client-logo">' if logo_client_b64 else '🏥'
 
 st.markdown(f"""
