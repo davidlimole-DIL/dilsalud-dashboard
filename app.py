@@ -8,6 +8,7 @@
 import os
 import re
 import json
+import base64
 from datetime import datetime, date
 from calendar import monthrange
 
@@ -42,50 +43,207 @@ MESES_ES = {
 
 
 # ============================================================
-# 2. ESTILOS CSS — Responsive Desktop + Mobile
+# 2. ESTILOS CSS — Responsive Desktop + Mobile (Premium Clinic Theme)
 # ============================================================
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #f8fafc;
+    }
+
     /* ── KPI Cards ── */
     .kpi-card {
-        border-radius: 14px; padding: 18px 12px; color: white;
-        text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,.12);
-        transition: transform .15s; margin-bottom: 10px;
+        border-radius: 16px; 
+        padding: 22px 16px; 
+        color: #1e293b;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+        transition: all 0.2s ease-in-out;
+        margin-bottom: 15px;
+        position: relative;
+        overflow: hidden;
     }
-    .kpi-card:hover { transform: translateY(-3px); }
-    .kpi-card.purple { background: linear-gradient(135deg, #667eea, #764ba2); }
-    .kpi-card.green  { background: linear-gradient(135deg, #11998e, #38ef7d); }
-    .kpi-card.red    { background: linear-gradient(135deg, #eb3349, #f45c43); }
-    .kpi-card.yellow { background: linear-gradient(135deg, #f7971e, #ffd200); }
-    .kpi-card.blue   { background: linear-gradient(135deg, #2193b0, #6dd5ed); }
-    .kpi-value { font-size: 36px; font-weight: 800; margin: 0; line-height: 1.1; }
-    .kpi-label { font-size: 11px; opacity: .85; margin-top: 6px;
-                 text-transform: uppercase; letter-spacing: 1.5px; }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    }
+    .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+    }
+    .kpi-card.purple::before { background: #6366f1; }
+    .kpi-card.green::before  { background: #10b981; }
+    .kpi-card.red::before    { background: #f43f5e; }
+    .kpi-card.yellow::before { background: #eab308; }
+    .kpi-card.blue::before   { background: #06b6d4; }
+    
+    .kpi-value { 
+        font-size: 34px; 
+        font-weight: 800; 
+        margin: 0; 
+        line-height: 1.1; 
+        color: #0f172a;
+    }
+    .kpi-label { 
+        font-size: 11px; 
+        color: #64748b; 
+        margin-top: 5px;
+        font-weight: 700;
+        text-transform: uppercase; 
+        letter-spacing: 1.2px; 
+    }
 
-    /* ── Header ── */
-    .main-header { text-align: center; padding: 6px 0 18px;
-                   border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
-    .main-header h1 { color: #1e3a5f; margin: 0; font-size: 26px; }
-    .main-header p  { color: #6b7280; margin: 5px 0 0; font-size: 13px; }
+    /* ── Header Container ── */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+        margin-bottom: 25px;
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #1e3b8b;
+    }
+    .header-logo-title {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .client-logo {
+        height: 55px;
+        object-fit: contain;
+    }
+    .header-text {
+        display: flex;
+        flex-direction: column;
+    }
+    .header-title {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 800;
+        color: #1e3b8b;
+    }
+    .header-subtitle {
+        margin: 2px 0 0 0;
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+    }
+    .sync-badge {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
 
-    /* ── Watermark ── */
-    .watermark { text-align: center; font-size: 10px; color: #9ca3af;
-                 text-transform: uppercase; letter-spacing: 3px;
-                 font-weight: 700; padding: 20px 0;
-                 border-top: 1px solid #e5e7eb; margin-top: 30px; }
+    /* ── Watermark Container ── */
+    .footer-container {
+        margin-top: 50px;
+        padding: 25px 0;
+        text-align: center;
+    }
+    .footer-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+        margin-bottom: 15px;
+    }
+    .footer-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        font-size: 10px;
+        color: #94a3b8;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .dil-logo {
+        height: 24px;
+        object-fit: contain;
+        vertical-align: middle;
+        transition: transform 0.2s;
+    }
+    .dil-logo:hover {
+        transform: scale(1.08);
+    }
+    .dil-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        color: #64748b;
+        font-weight: 700;
+    }
+    .dil-link:hover {
+        color: #1e3b8b;
+    }
 
     /* ── Sidebar ── */
-    section[data-testid="stSidebar"] { background: #f8fafc; }
+    section[data-testid="stSidebar"] { 
+        background: #f1f5f9; 
+        border-right: 1px solid #e2e8f0;
+    }
+
+    /* ── Tab styles override ── */
+    button[data-baseweb="tab"] {
+        font-weight: 600;
+        color: #64748b;
+        font-size: 14px;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #1e3b8b !important;
+        border-bottom-color: #1e3b8b !important;
+    }
+
+    /* Pulsing sync dot */
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+    }
 
     /* ── MOBILE: pantallas < 768px ── */
     @media (max-width: 768px) {
-        .main-header h1 { font-size: 20px; }
-        .kpi-value { font-size: 28px; }
+        .header-container {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 16px;
+        }
+        .header-logo-title {
+            gap: 12px;
+        }
+        .client-logo {
+            height: 40px;
+        }
+        .header-title {
+            font-size: 18px;
+        }
+        .header-subtitle {
+            font-size: 11px;
+        }
+        .kpi-value { font-size: 26px; }
         .kpi-label { font-size: 9px; }
-        .kpi-card { padding: 14px 8px; }
-
-        /* Ocultar columnas secundarias en la tabla */
-        .mobile-hide { display: none !important; }
+        .kpi-card { padding: 14px 10px; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -140,6 +298,19 @@ def _get_client():
 
 
 # ============================================================
+# 3c. LOGO BASE64 ENCODER HELPER
+# ============================================================
+@st.cache_data
+def get_base64_logo(filename):
+    """Carga y convierte una imagen local en base64 para embeber en HTML."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    return ""
+
+
+# ============================================================
 # 4. CONTROL DE ACCESO
 # ============================================================
 def verificar_acceso():
@@ -151,25 +322,43 @@ def verificar_acceso():
     if st.session_state.get("autenticado"):
         return
 
-    st.markdown(
-        '<div style="text-align:center;padding-top:60px">'
-        '<h1>🏥 DIL-Salud</h1>'
-        '<p style="color:#6b7280">Dashboard de Logística Médica</p></div>',
-        unsafe_allow_html=True,
-    )
+    logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
+    logo_dil_b64 = get_base64_logo("logoDIL1transp.png")
+
+    client_logo_html = f'<img src="data:image/png;base64,{logo_client_b64}" style="height: 100px; object-fit: contain; margin-bottom: 20px;">' if logo_client_b64 else '🏥'
+
+    st.markdown(f"""
+    <div style="text-align: center; margin-top: 50px;">
+        {client_logo_html}
+        <h2 style="color: #1e3b8b; font-weight: 800; margin: 0; font-size: 26px;">DIL-Salud</h2>
+        <p style="color: #64748b; font-size: 13px; margin-top: 5px; margin-bottom: 30px; font-weight: 500;">Dashboard de Logística Médica</p>
+    </div>
+    """, unsafe_allow_html=True)
+
     _, col_c, _ = st.columns([1, 2, 1])
     with col_c:
-        pwd = st.text_input("Contraseña", type="password", key="lp")
-        if st.button("Ingresar", use_container_width=True, type="primary"):
-            if pwd == password_correcta:
-                st.session_state.autenticado = True
-                st.rerun()
-            else:
-                st.error("Contraseña incorrecta")
-        st.markdown(
-            '<div class="watermark">Motorizado por DIL Digital</div>',
-            unsafe_allow_html=True,
-        )
+        with st.container(border=True):
+            pwd = st.text_input("Contraseña de Acceso", type="password", key="lp")
+            if st.button("Ingresar al Sistema", use_container_width=True, type="primary"):
+                if pwd == password_correcta:
+                    st.session_state.autenticado = True
+                    st.rerun()
+                else:
+                    st.error("Contraseña incorrecta")
+
+    dil_logo_html = f'<img src="data:image/png;base64,{logo_dil_b64}" class="dil-logo">' if logo_dil_b64 else '<span>DIL Digital</span>'
+    st.markdown(f"""
+    <div class="footer-container" style="margin-top: 60px;">
+        <div class="footer-divider"></div>
+        <div class="footer-content">
+            <span>Desarrollado por</span>
+            <a href="https://www.dildigital.com.ar" target="_blank" class="dil-link">
+                {dil_logo_html}
+                <span>DIL Digital</span>
+            </a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     st.stop()
 
 
@@ -417,7 +606,11 @@ else:
     moviles_disp = []
 
 with st.sidebar:
-    st.markdown("### 🏥 DIL-Salud")
+    logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
+    if logo_client_b64:
+        st.markdown(f'<div style="text-align: center; margin-bottom: 20px;"><img src="data:image/png;base64,{logo_client_b64}" style="width: 140px; object-fit: contain;"></div>', unsafe_allow_html=True)
+    else:
+        st.markdown("### 🏥 DIL-Salud")
     st.caption("Dashboard de Logística Médica")
     st.markdown("---")
 
@@ -438,20 +631,42 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
-    st.markdown('<div class="watermark">Motorizado por DIL Digital</div>',
-                unsafe_allow_html=True)
+    logo_dil_b64 = get_base64_logo("logoDIL1transp.png")
+    dil_logo_html = f'<img src="data:image/png;base64,{logo_dil_b64}" class="dil-logo" style="height: 18px;">' if logo_dil_b64 else '<span>DIL Digital</span>'
+    st.markdown(f"""
+    <div style="text-align: center; font-size: 9px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span>Desarrollado por</span>
+        <a href="https://www.dildigital.com.ar" target="_blank" class="dil-link" style="font-size: 9px; font-weight: 700; color: #64748b; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;">
+            {dil_logo_html}
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ============================================================
 # 10. HEADER
 # ============================================================
 hora_sync = datetime.now().strftime("%H:%M:%S")
-st.markdown(
-    f'<div class="main-header">'
-    f'<h1>🏥 DIL-Salud — Dashboard de Logística</h1>'
-    f'<p>Última sincronización: {hora_sync}</p></div>',
-    unsafe_allow_html=True,
-)
+logo_client_b64 = get_base64_logo("logo_sin_fondo.png") or get_base64_logo("logo.png")
+logo_client_html = f'<img src="data:image/png;base64,{logo_client_b64}" class="client-logo">' if logo_client_b64 else '🏥'
+
+st.markdown(f"""
+<div class="header-container">
+    <div class="header-logo-title">
+        {logo_client_html}
+        <div class="header-text">
+            <h1 class="header-title">DIL-Salud</h1>
+            <p class="header-subtitle">Control y Logística de Pacientes Hematológicos</p>
+        </div>
+    </div>
+    <div class="header-sync-status">
+        <span class="sync-badge">
+            <span style="display:inline-block; width:8px; height:8px; background-color:#16a34a; border-radius:50%; animation: pulse 2s infinite;"></span>
+            Sincronizado: {hora_sync}
+        </span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 
 # ============================================================
@@ -734,5 +949,18 @@ with tab_excepciones:
 # ============================================================
 # 12. FOOTER
 # ============================================================
-st.markdown('<div class="watermark">Motorizado por DIL Digital</div>',
-            unsafe_allow_html=True)
+logo_dil_b64 = get_base64_logo("logoDIL1transp.png")
+dil_logo_html = f'<img src="data:image/png;base64,{logo_dil_b64}" class="dil-logo">' if logo_dil_b64 else '<span>DIL Digital</span>'
+
+st.markdown(f"""
+<div class="footer-container">
+    <div class="footer-divider"></div>
+    <div class="footer-content">
+        <span>Desarrollado y Administrado por</span>
+        <a href="https://www.dildigital.com.ar" target="_blank" class="dil-link">
+            {dil_logo_html}
+            <span>DIL Digital</span>
+        </a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
