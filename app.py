@@ -56,6 +56,11 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important;
+    }
+
     /* ── KPI Cards ── */
     .kpi-card {
         border-radius: 16px; 
@@ -113,6 +118,7 @@ st.markdown("""
         background: var(--secondary-background-color, #ffffff);
         border-radius: 16px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        margin-top: -3.5rem !important;
         margin-bottom: 25px;
         border: 1px solid rgba(128, 128, 128, 0.15);
         border-left: 5px solid #1e3b8b;
@@ -197,7 +203,8 @@ st.markdown("""
 
     /* ── Sidebar ── */
     section[data-testid="stSidebar"] { 
-        border-right: 1px solid rgba(128, 128, 128, 0.15);
+        background-color: var(--background-color, #ffffff) !important;
+        border-right: 1px solid rgba(128, 128, 128, 0.15) !important;
     }
 
     /* ── Tab styles override ── */
