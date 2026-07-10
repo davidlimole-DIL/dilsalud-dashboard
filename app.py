@@ -52,13 +52,26 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+    html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
+    /* Hide Streamlit top bar to prevent overlapping/clipping */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 1.5rem !important;
         padding-bottom: 2rem !important;
+    }
+
+    /* Compact sidebar spacing */
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0.6rem !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div {
+        padding-bottom: 0.3rem !important;
     }
 
     /* ── KPI Cards ── */
