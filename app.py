@@ -12,7 +12,7 @@ import os
 import re
 import json
 import base64
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from calendar import monthrange
 
 import streamlit as st
@@ -658,7 +658,13 @@ with st.sidebar:
 # ============================================================
 # 10. HEADER
 # ============================================================
-hora_sync = datetime.now().strftime("%H:%M:%S")
+tz_arg = timezone(timedelta(hours=-3))
+ahora_arg = datetime.now(tz_arg)
+dia_semana_nombre = DIAS_SEMANA[ahora_arg.weekday()]
+fecha_sync = ahora_arg.strftime("%d/%m/%Y")
+hora_sync = ahora_arg.strftime("%H:%M:%S")
+sync_leyenda = f"{fecha_sync} {dia_semana_nombre} — {hora_sync}"
+
 logo_client_b64 = get_base64_logo("logo.png")
 logo_client_html = f'<img src="data:image/png;base64,{logo_client_b64}" class="client-logo">' if logo_client_b64 else '🏥'
 
@@ -673,7 +679,7 @@ st.markdown(f"""
     <div class="header-sync-status">
         <span class="sync-badge">
             <span style="display:inline-block; width:8px; height:8px; background-color:#16a34a; border-radius:50%; animation: pulse 2s infinite;"></span>
-            Sincronizado: {hora_sync}
+            Sincronizado: {sync_leyenda}
         </span>
     </div>
 </div>
