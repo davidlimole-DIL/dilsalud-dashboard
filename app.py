@@ -796,6 +796,102 @@ with tab_diario:
             fig2.update_traces(textposition="inside")
             st.plotly_chart(fig2, use_container_width=True)
 
+        # 📊 Capacidad y Ocupación de Vehículos por Turno
+        mapa_capacidades = {}
+        if not df_usuarios.empty:
+            # Buscar columnas con tolerancia de encoding (ej: Móvil_Asignado, Capacidad)
+            col_movil = None
+            col_cap = None
+            for c in df_usuarios.columns:
+                c_norm = str(c).lower().replace("ó", "o").replace("í", "i").replace("á", "a")
+                if "movil" in c_norm:
+                    col_movil = c
+                if "capacidad" in c_norm:
+                    col_cap = c
+                    
+            if col_movil and col_cap:
+                for _, row in df_usuarios.iterrows():
+                    mov_u = str(row[col_movil]).strip()
+                    if mov_u and mov_u.lower() != "nan":
+                        try:
+                            cap_u = int(row[col_cap])
+                        except:
+                            cap_u = 4
+                        mapa_capacidades[mov_u] = cap_u
+
+        datos_ocupacion = []
+        if not df_monitor.empty:
+            grouped_oc = df_monitor.groupby(["Móvil", "Turno"]).size().reset_index(name="Ocupados")
+            for _, row in grouped_oc.iterrows():
+                mov_o = row["Móvil"]
+                turno_o = row["Turno"]
+                ocupados_o = row["Ocupados"]
+                capacidad_o = mapa_capacidades.get(mov_o, 4) # Por defecto 4 plazas
+                plazas_libres_o = capacidad_o - ocupados_o
+                porcentaje_o = round((ocupados_o / capacidad_o) * 100, 1)
+                
+                datos_ocupacion.append({
+                    "Móvil": mov_o,
+                    "Turno": turno_o,
+                    "Capacidad": capacidad_o,
+                    "Ocupados": ocupados_o,
+                    "Plazas Disponibles": plazas_libres_o,
+                    "Uso (%)": porcentaje_o
+                })
+
+        if datos_ocupacion:
+            df_oc = pd.DataFrame(datos_ocupacion).sort_values(["Móvil", "Turno"]).reset_index(drop=True)
+            
+            st.markdown("---")
+            st.markdown("**📊 Ocupación y Capacidad de Vehículos**")
+            
+            cols_oc = st.columns(3)
+            for idx_o, row_o in df_oc.iterrows():
+                col_target = cols_oc[idx_o % 3]
+                with col_target:
+                    m_name = row_o["Móvil"]
+                    m_turno = row_o["Turno"]
+                    m_ocup = row_o["Ocupados"]
+                    m_cap = row_o["Capacidad"]
+                    m_free = row_o["Plazas Disponibles"]
+                    m_pct = row_o["Uso (%)"]
+                    
+                    if m_pct > 100:
+                        status_txt = f"⚠️ Sobrecupado por {-m_free} pl."
+                        bar_col = "#f45c43" # Rojo
+                    elif m_pct == 100:
+                        status_txt = "Completo (0 pl. disp.)"
+                        bar_col = "#eab308" # Amarillo
+                    elif m_pct >= 75:
+                        status_txt = f"Ocupación alta ({m_free} pl. disp.)"
+                        bar_col = "#3b82f6" # Azul
+                    else:
+                        status_txt = f"Disponible ({m_free} pl. disp.)"
+                        bar_col = "#10b981" # Verde
+                    
+                    val_bar = min(100.0, m_pct)
+                    st.markdown(
+                        f"""
+                        <div style="background-color: var(--secondary-background-color, #ffffff); padding: 12px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.15); margin-bottom: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-weight: 700; font-size: 13px; color: var(--text-color, #1e293b);">{m_name}</span>
+                                <span style="font-size: 9px; font-weight: 800; background-color: rgba(128,128,128,0.12); padding: 2px 6px; border-radius: 4px; color: var(--text-color, #1e293b);">{m_turno}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-color, #1e293b); opacity: 0.8; margin-bottom: 6px;">
+                                <span>Capacidad: {m_cap} pl.</span>
+                                <span style="font-weight: 700;">{m_pct}% ({m_ocup}/{m_cap})</span>
+                            </div>
+                            <div style="background-color: rgba(128,128,128,0.15); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+                                <div style="background: {bar_col}; width: {val_bar}%; height: 100%; border-radius: 3px;"></div>
+                            </div>
+                            <div style="font-size: 10px; font-weight: 700; text-align: right; color: {bar_col};">
+                                {status_txt}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
         st.markdown("---")
 
     # Tabla de monitoreo
