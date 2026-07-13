@@ -44,6 +44,30 @@ MESES_ES = {
     9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
 }
 
+# Argentina Timezone offset is UTC-3
+tz_arg = timezone(timedelta(hours=-3))
+hoy_arg = datetime.now(tz_arg).date()
+
+def generar_opciones_meses(fecha_ref):
+    """Genera las opciones de meses en reversa (más reciente primero) desde Junio 2026."""
+    mes_inicio = 6
+    anio_inicio = 2026
+    
+    opciones = {}
+    
+    anio_curr, mes_curr = anio_inicio, mes_inicio
+    while (anio_curr < fecha_ref.year) or (anio_curr == fecha_ref.year and mes_curr <= fecha_ref.month):
+        label = f"{MESES_ES[mes_curr]} {anio_curr}"
+        opciones[label] = (mes_curr, anio_curr)
+        
+        if mes_curr == 12:
+            mes_curr = 1
+            anio_curr += 1
+        else:
+            mes_curr += 1
+            
+    return {k: opciones[k] for k in reversed(list(opciones.keys()))}
+
 
 # ============================================================
 # 2. ESTILOS CSS — Responsive Desktop + Mobile (Premium Clinic Theme)
@@ -510,7 +534,7 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
 def calcular_metricas_mensuales(_mes, _anio, _df_cron, _df_exc, _df_pac, _df_asis):
     """Itera día por día del mes y acumula las métricas diarias."""
     ultimo_dia = monthrange(_anio, _mes)[1]
-    hoy = date.today()
+    hoy = hoy_arg
 
     datos_diarios = []
     for dia in range(1, ultimo_dia + 1):
@@ -627,7 +651,7 @@ with st.sidebar:
     st.markdown('<div style="margin: 4px 0; border-top: 1px solid rgba(128,128,128,0.15)"></div>', unsafe_allow_html=True)
 
     st.markdown('<div style="font-size: 12px; font-weight: 700; color: var(--text-color); margin-bottom: 4px;">📅 Fecha (Monitor Diario)</div>', unsafe_allow_html=True)
-    fecha_sel = st.date_input("Fecha", value=date.today(), format="DD/MM/YYYY",
+    fecha_sel = st.date_input("Fecha", value=hoy_arg, format="DD/MM/YYYY",
                               label_visibility="collapsed")
 
     st.markdown('<div style="margin: 4px 0; border-top: 1px solid rgba(128,128,128,0.15)"></div>', unsafe_allow_html=True)
@@ -797,15 +821,7 @@ with tab_diario:
 
 # ── TAB 2: ACUMULADO MENSUAL ───────────────────────────────
 with tab_mensual:
-    hoy = date.today()
-    mes_ant = hoy.month - 1 if hoy.month > 1 else 12
-    anio_ant = hoy.year if hoy.month > 1 else hoy.year - 1
-
-    opciones_mes = {
-        f"{MESES_ES[hoy.month]} {hoy.year}": (hoy.month, hoy.year),
-        f"{MESES_ES[mes_ant]} {anio_ant}": (mes_ant, anio_ant),
-    }
-
+    opciones_mes = generar_opciones_meses(hoy_arg)
     mes_label = st.selectbox("Seleccionar período", list(opciones_mes.keys()))
     mes_sel, anio_sel = opciones_mes[mes_label]
 
@@ -890,15 +906,7 @@ with tab_mensual:
 
 # ── TAB 3: EXCEPCIONES ─────────────────────────────────────
 with tab_excepciones:
-    hoy = date.today()
-    mes_ant = hoy.month - 1 if hoy.month > 1 else 12
-    anio_ant = hoy.year if hoy.month > 1 else hoy.year - 1
-
-    opciones_exc = {
-        f"{MESES_ES[hoy.month]} {hoy.year}": (hoy.month, hoy.year),
-        f"{MESES_ES[mes_ant]} {anio_ant}": (mes_ant, anio_ant),
-    }
-
+    opciones_exc = generar_opciones_meses(hoy_arg)
     mes_exc_label = st.selectbox("Período de excepciones", list(opciones_exc.keys()),
                                   key="exc_mes")
     mes_exc, anio_exc = opciones_exc[mes_exc_label]
