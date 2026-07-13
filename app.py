@@ -531,18 +531,18 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
 # 7. MOTOR DE CÁLCULO MENSUAL
 # ============================================================
 @st.cache_data(ttl=300, show_spinner="Calculando métricas mensuales…")
-def calcular_metricas_mensuales(_mes, _anio, _df_cron, _df_exc, _df_pac, _df_asis):
+def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
     """Itera día por día del mes y acumula las métricas diarias."""
-    ultimo_dia = monthrange(_anio, _mes)[1]
+    ultimo_dia = monthrange(anio, mes)[1]
     hoy = hoy_arg
 
     datos_diarios = []
     for dia in range(1, ultimo_dia + 1):
-        fecha = date(_anio, _mes, dia)
+        fecha = date(anio, mes, dia)
         if fecha > hoy:
             break
 
-        df_dia = calcular_universo_diario(fecha, _df_cron, _df_exc, _df_pac, _df_asis)
+        df_dia = calcular_universo_diario(fecha, df_cron, df_exc, df_pac, df_asis)
         esp = len(df_dia)
         if esp == 0:
             continue
@@ -822,7 +822,7 @@ with tab_diario:
 # ── TAB 2: ACUMULADO MENSUAL ───────────────────────────────
 with tab_mensual:
     opciones_mes = generar_opciones_meses(hoy_arg)
-    mes_label = st.selectbox("Seleccionar período", list(opciones_mes.keys()))
+    mes_label = st.selectbox("Seleccionar período", list(opciones_mes.keys()), key="mensual_mes")
     mes_sel, anio_sel = opciones_mes[mes_label]
 
     metricas = calcular_metricas_mensuales(
