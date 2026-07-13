@@ -542,6 +542,15 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
         if fecha > hoy:
             break
 
+        # Si el día es en el pasado y no tiene ningún registro en asistencia, lo saltamos
+        if fecha < hoy:
+            if df_asis.empty:
+                continue
+            fecha_str = fecha.strftime("%d/%m/%Y")
+            tiene_registros = (df_asis["Fecha_Servicio"].astype(str).str.strip() == fecha_str).any()
+            if not tiene_registros:
+                continue
+
         df_dia = calcular_universo_diario(fecha, df_cron, df_exc, df_pac, df_asis)
         esp = len(df_dia)
         if esp == 0:
