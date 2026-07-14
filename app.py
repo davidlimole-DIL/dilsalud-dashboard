@@ -786,7 +786,12 @@ with tab_diario:
             fig = px.pie(
                 names=["Presentes", "Ausentes", "Pendientes"],
                 values=[t_pre, t_aus, t_pen],
-                color_discrete_sequence=["#38ef7d", "#f45c43", "#ffd200"],
+                color=["Presentes", "Ausentes", "Pendientes"],
+                color_discrete_map={
+                    "Presentes": "#38ef7d",
+                    "Ausentes": "#f45c43",
+                    "Pendientes": "#ffd200"
+                },
                 hole=0.5,
             )
             fig.update_traces(textinfo="value+percent", textfont_size=13)
@@ -1059,7 +1064,11 @@ with tab_excepciones:
         fig_exc = px.pie(
             names=["Cancelaciones", "Viajes Extra"],
             values=[n_cancel, n_agreg],
-            color_discrete_sequence=["#f45c43", "#38ef7d"],
+            color=["Cancelaciones", "Viajes Extra"],
+            color_discrete_map={
+                "Cancelaciones": "#f45c43",
+                "Viajes Extra": "#38ef7d"
+            },
             hole=0.5,
         )
         fig_exc.update_traces(textinfo="value+percent", textfont_size=14)
