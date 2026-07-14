@@ -549,6 +549,8 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
     hoy = hoy_arg
 
     datos_diarios = []
+    datos_pacientes = {}
+    
     for dia in range(1, ultimo_dia + 1):
         fecha = date(anio, mes, dia)
         if fecha > hoy:
@@ -581,10 +583,82 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
             "Pendientes": pen,
         })
 
+        for _, row in df_dia.iterrows():
+            pid = str(row.get("ID_Paciente", "")).strip()
+            pnom = str(row.get("Nombre", "Desconocido")).strip()
+            asis = str(row.get("Asistencia", "Pendiente")).strip()
+            if pid:
+                if pid not in datos_pacientes:
+                    datos_pacientes[pid] = {
+                        "Nombre": pnom,
+                        "Asistencias": []
+                    }
+                datos_pacientes[pid]["Asistencias"].append((fecha, asis))
+
     if not datos_diarios:
         return None
 
     df = pd.DataFrame(datos_diarios)
+    
+    # Procesar estadísticas por paciente
+    filas_pacientes = []
+    dias_nombres = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+    dias_cortos = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    
+    for pid, info in datos_pacientes.items():
+        nom = info["Nombre"]
+        asis_list = info["Asistencias"]
+        
+        pre_c = sum(1 for f, a in asis_list if a == "Presente")
+        aus_c = sum(1 for f, a in asis_list if a == "Ausente")
+        pen_c = sum(1 for f, a in asis_list if a == "Pendiente")
+        total_c = len(asis_list)
+        tasa_c = round((pre_c / total_c) * 100, 1) if total_c > 0 else 0.0
+        
+        aus_por_dia = {i: 0 for i in range(7)}
+        sched_por_dia = {i: 0 for i in range(7)}
+        for f, a in asis_list:
+            wd = f.weekday()
+            sched_por_dia[wd] += 1
+            if a == "Ausente":
+                aus_por_dia[wd] += 1
+                
+        desglose_partes = []
+        for i in range(7):
+            if aus_por_dia[i] > 0:
+                desglose_partes.append(f"{dias_cortos[i]}: {aus_por_dia[i]}")
+        desglose_str = " | ".join(desglose_partes) if desglose_partes else "-"
+        
+        patrones = []
+        for i in range(7):
+            faltas = aus_por_dia[i]
+            programados = sched_por_dia[i]
+            if faltas >= 2:
+                if faltas == programados:
+                    patrones.append(f"❌ Faltó todos los {dias_nombres[i]} ({faltas} de {programados})")
+                elif (faltas / programados) >= 0.75:
+                    patrones.append(f"⚠️ Faltó casi siempre los {dias_nombres[i]} ({faltas} de {programados})")
+                elif faltas >= 3:
+                    patrones.append(f"🔍 Faltas recurrentes los {dias_nombres[i]} ({faltas} faltas)")
+                    
+        patron_str = ", ".join(patrones) if patrones else "Sin patrones"
+        
+        filas_pacientes.append({
+            "Paciente": nom,
+            "Tasa Asistencia (%)": tasa_c,
+            "Presentes": pre_c,
+            "Ausentes": aus_c,
+            "Pendientes": pen_c,
+            "Total Programados": total_c,
+            "Desglose (Ausentes)": desglose_str,
+            "Patrón Detectado": patron_str,
+            "Tiene Alertas": len(patrones) > 0,
+        })
+        
+    df_pacientes_res = pd.DataFrame(filas_pacientes)
+    if not df_pacientes_res.empty:
+        df_pacientes_res = df_pacientes_res.sort_values("Paciente").reset_index(drop=True)
+
     return {
         "total_esperados": int(df["Esperados"].sum()),
         "total_presentes": int(df["Presentes"].sum()),
@@ -593,6 +667,7 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
         "tasa": round(df["Presentes"].sum() / df["Esperados"].sum() * 100, 1) if df["Esperados"].sum() > 0 else 0,
         "dias_operativos": len(df),
         "diario": df,
+        "pacientes": df_pacientes_res,
     }
 
 
@@ -1024,6 +1099,84 @@ with tab_mensual:
                             "Ausentes", "Pendientes"]].copy()
             df_show = df_show.rename(columns={"Fecha_str": "Fecha"})
             st.dataframe(df_show, use_container_width=True, hide_index=True)
+
+        # 👥 Seguimiento Estadístico por Paciente
+        st.markdown("---")
+        st.markdown("### 👥 Seguimiento Estadístico por Paciente")
+        
+        df_pacs = metricas.get("pacientes")
+        if df_pacs is None or df_pacs.empty:
+            st.info("No hay datos individuales de pacientes para este período.")
+        else:
+            # Filtros interactivos
+            col_search, col_filter = st.columns([2, 1])
+            with col_search:
+                search_query = st.text_input("🔍 Buscar paciente...", key="mensual_search").strip().lower()
+            with col_filter:
+                filter_type = st.selectbox(
+                    "Filtrar por alertas / estado",
+                    ["Todos los pacientes", "Con inasistencias", "Con alertas de inasistencia (Patrones)", "Baja asistencia (< 80%)"],
+                    key="mensual_filter"
+                )
+                
+            # Aplicar filtros
+            df_filtered = df_pacs.copy()
+            if search_query:
+                df_filtered = df_filtered[df_filtered["Paciente"].str.lower().str.contains(search_query)]
+                
+            if filter_type == "Con inasistencias":
+                df_filtered = df_filtered[df_filtered["Ausentes"] > 0]
+            elif filter_type == "Con alertas de inasistencia (Patrones)":
+                df_filtered = df_filtered[df_filtered["Tiene Alertas"] == True]
+            elif filter_type == "Baja asistencia (< 80%)":
+                df_filtered = df_filtered[df_filtered["Tasa Asistencia (%)"] < 80.0]
+                
+            # Mostrar tabla resumen
+            if df_filtered.empty:
+                st.info("Ningún paciente coincide con los filtros aplicados.")
+            else:
+                # Columnas a mostrar
+                df_display = df_filtered[[
+                    "Paciente", "Tasa Asistencia (%)", "Presentes", "Ausentes", 
+                    "Pendientes", "Total Programados", "Desglose (Ausentes)", "Patrón Detectado"
+                ]].copy()
+                
+                # Función para aplicar estilos a la tabla
+                def _estilo_fila(row):
+                    tasa = row["Tasa Asistencia (%)"]
+                    patron = row["Patrón Detectado"]
+                    
+                    # Estilo por defecto
+                    estilo_tasa = ""
+                    if tasa >= 90:
+                        estilo_tasa = "background-color: #d1fae5; color: #065f46; font-weight: bold;" # Verde claro
+                    elif tasa >= 70:
+                        estilo_tasa = "background-color: #fef9c3; color: #854d0e; font-weight: bold;" # Amarillo claro
+                    else:
+                        estilo_tasa = "background-color: #fee2e2; color: #991b1b; font-weight: bold;" # Rojo claro
+                        
+                    estilo_patron = ""
+                    if patron != "Sin patrones":
+                        estilo_patron = "background-color: #fff7ed; color: #c2410c; font-weight: 600;" # Naranja claro
+                        
+                    return [
+                        "",  # Paciente
+                        estilo_tasa,  # Tasa Asistencia (%)
+                        "",  # Presentes
+                        "",  # Ausentes
+                        "",  # Pendientes
+                        "",  # Total Programados
+                        "",  # Desglose (Ausentes)
+                        estilo_patron,  # Patrón Detectado
+                    ]
+                
+                st.dataframe(
+                    df_display.style.apply(_estilo_fila, axis=1),
+                    use_container_width=True,
+                    height=min(500, 45 + len(df_display) * 36),
+                    hide_index=True,
+                )
+
 
 
 # ── TAB 3: EXCEPCIONES ─────────────────────────────────────
