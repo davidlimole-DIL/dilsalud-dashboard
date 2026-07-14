@@ -548,6 +548,29 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
     ultimo_dia = monthrange(anio, mes)[1]
     hoy = hoy_arg
 
+    # Procesar excepciones del mes por paciente
+    excepciones_paciente = {}
+    if not df_exc.empty:
+        for _, row_e in df_exc.iterrows():
+            f_str = str(row_e.get("Fecha_Exacta", "")).strip()
+            partes = f_str.split("/")
+            if len(partes) == 3:
+                try:
+                    d_e, m_e, a_e = int(partes[0]), int(partes[1]), int(partes[2])
+                    if m_e == mes and a_e == anio:
+                        pid_e = str(row_e.get("ID_Paciente", "")).strip()
+                        tipo_e = str(row_e.get("Tipo_Modificacion", "")).strip().upper()
+                        
+                        if pid_e not in excepciones_paciente:
+                            excepciones_paciente[pid_e] = {"cancelaciones": 0, "agregados": 0}
+                            
+                        if "CANCELA" in tipo_e:
+                            excepciones_paciente[pid_e]["cancelaciones"] += 1
+                        elif "AGREGA" in tipo_e:
+                            excepciones_paciente[pid_e]["agregados"] += 1
+                except:
+                    pass
+
     datos_diarios = []
     datos_pacientes = {}
     
@@ -587,13 +610,14 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
             pid = str(row.get("ID_Paciente", "")).strip()
             pnom = str(row.get("Nombre", "Desconocido")).strip()
             asis = str(row.get("Asistencia", "Pendiente")).strip()
+            turno_d = str(row.get("Turno", "")).strip()
             if pid:
                 if pid not in datos_pacientes:
                     datos_pacientes[pid] = {
                         "Nombre": pnom,
                         "Asistencias": []
                     }
-                datos_pacientes[pid]["Asistencias"].append((fecha, asis))
+                datos_pacientes[pid]["Asistencias"].append((fecha, turno_d, asis))
 
     if not datos_diarios:
         return None
@@ -609,15 +633,33 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
         nom = info["Nombre"]
         asis_list = info["Asistencias"]
         
-        pre_c = sum(1 for f, a in asis_list if a == "Presente")
-        aus_c = sum(1 for f, a in asis_list if a == "Ausente")
-        pen_c = sum(1 for f, a in asis_list if a == "Pendiente")
+        pre_c = sum(1 for f, t, a in asis_list if a == "Presente")
+        aus_c = sum(1 for f, t, a in asis_list if a == "Ausente")
+        pen_c = sum(1 for f, t, a in asis_list if a == "Pendiente")
         total_c = len(asis_list)
         tasa_c = round((pre_c / total_c) * 100, 1) if total_c > 0 else 0.0
         
+        # Turnos únicos
+        turnos_unicos = sorted(list(set(t for f, t, a in asis_list if t)))
+        turnos_str = " | ".join(turnos_unicos) if turnos_unicos else "-"
+        
+        # Excepciones del mes para el paciente
+        exc_info = excepciones_paciente.get(pid, {"cancelaciones": 0, "agregados": 0})
+        n_canc = exc_info["cancelaciones"]
+        n_agreg = exc_info["agregados"]
+        if n_canc > 0 or n_agreg > 0:
+            partes_exc = []
+            if n_canc > 0:
+                partes_exc.append(f"{n_canc} Cancelación" if n_canc == 1 else f"{n_canc} Cancelaciones")
+            if n_agreg > 0:
+                partes_exc.append(f"{n_agreg} Extra" if n_agreg == 1 else f"{n_agreg} Extras")
+            exc_str = " | ".join(partes_exc)
+        else:
+            exc_str = "No"
+        
         aus_por_dia = {i: 0 for i in range(7)}
         sched_por_dia = {i: 0 for i in range(7)}
-        for f, a in asis_list:
+        for f, t, a in asis_list:
             wd = f.weekday()
             sched_por_dia[wd] += 1
             if a == "Ausente":
@@ -645,12 +687,14 @@ def calcular_metricas_mensuales(mes, anio, df_cron, df_exc, df_pac, df_asis):
         
         filas_pacientes.append({
             "Paciente": nom,
+            "Turno/s": turnos_str,
             "Tasa Asistencia (%)": tasa_c,
             "Presentes": pre_c,
             "Ausentes": aus_c,
             "Pendientes": pen_c,
             "Total Programados": total_c,
             "Desglose (Ausentes)": desglose_str,
+            "Excepciones": exc_str,
             "Patrón Detectado": patron_str,
             "Tiene Alertas": len(patrones) > 0,
         })
@@ -1137,8 +1181,8 @@ with tab_mensual:
             else:
                 # Columnas a mostrar
                 df_display = df_filtered[[
-                    "Paciente", "Tasa Asistencia (%)", "Presentes", "Ausentes", 
-                    "Pendientes", "Total Programados", "Desglose (Ausentes)", "Patrón Detectado"
+                    "Paciente", "Turno/s", "Tasa Asistencia (%)", "Presentes", "Ausentes", 
+                    "Pendientes", "Total Programados", "Desglose (Ausentes)", "Excepciones", "Patrón Detectado"
                 ]].copy()
                 
                 # Función para aplicar estilos a la tabla
@@ -1161,12 +1205,14 @@ with tab_mensual:
                         
                     return [
                         "",  # Paciente
+                        "",  # Turno/s
                         estilo_tasa,  # Tasa Asistencia (%)
                         "",  # Presentes
                         "",  # Ausentes
                         "",  # Pendientes
                         "",  # Total Programados
                         "",  # Desglose (Ausentes)
+                        "",  # Excepciones
                         estilo_patron,  # Patrón Detectado
                     ]
                 
@@ -1175,6 +1221,18 @@ with tab_mensual:
                     use_container_width=True,
                     height=min(500, 45 + len(df_display) * 36),
                     hide_index=True,
+                    column_config={
+                        "Paciente": st.column_config.TextColumn("Paciente", width=180),
+                        "Turno/s": st.column_config.TextColumn("Turno/s", width=100),
+                        "Tasa Asistencia (%)": st.column_config.NumberColumn("Asistencia (%)", width=100, format="%.1f%%"),
+                        "Presentes": st.column_config.NumberColumn("Pres.", width=70),
+                        "Ausentes": st.column_config.NumberColumn("Aus.", width=70),
+                        "Pendientes": st.column_config.NumberColumn("Pend.", width=75),
+                        "Total Programados": st.column_config.NumberColumn("Total", width=75),
+                        "Desglose (Ausentes)": st.column_config.TextColumn("Desglose (Ausentes)", width=150),
+                        "Excepciones": st.column_config.TextColumn("Excepciones", width=160),
+                        "Patrón Detectado": st.column_config.TextColumn("Patrón Detectado", width=280),
+                    }
                 )
 
 
