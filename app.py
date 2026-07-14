@@ -874,7 +874,7 @@ with tab_diario:
                     m_pct = row_o["Uso (%)"]
                     
                     if m_pct > 100:
-                        status_txt = f"⚠️ Sobrecupado por {-m_free} pl."
+                        status_txt = f"⚠️ Sobreocupado por {-m_free} pl."
                         bar_col = "#f45c43" # Rojo
                     elif m_pct == 100:
                         status_txt = "Completo (0 pl. disp.)"
