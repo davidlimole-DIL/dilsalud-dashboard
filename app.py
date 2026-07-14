@@ -375,7 +375,19 @@ def verificar_acceso():
     _, col_c, _ = st.columns([1, 2, 1])
     with col_c:
         with st.container(border=True):
-            pwd = st.text_input("Contraseña de Acceso", type="password", key="lp")
+            if "mostrar_pwd" not in st.session_state:
+                st.session_state.mostrar_pwd = False
+
+            col_pwd, col_eye = st.columns([5, 1])
+            with col_pwd:
+                tipo_input = "default" if st.session_state.mostrar_pwd else "password"
+                pwd = st.text_input("Contraseña de Acceso", type=tipo_input, key="lp")
+            with col_eye:
+                st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+                if st.button("👁️", key="btn_eye", help="Mostrar/Ocultar contraseña", use_container_width=True):
+                    st.session_state.mostrar_pwd = not st.session_state.mostrar_pwd
+                    st.rerun()
+
             if st.button("Ingresar al Sistema", use_container_width=True, type="primary"):
                 if pwd == password_correcta:
                     st.session_state.autenticado = True
