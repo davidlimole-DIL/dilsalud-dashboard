@@ -1,14 +1,15 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v4
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v5
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
-# Cero interacción, autorefresco de 5 minutos, diseño de aeropuerto ultra-compacto de doble columna por estado.
+# Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
 # ============================================================
 
 import os
 import re
 import json
 import base64
+import math
 from datetime import datetime, date, timezone, timedelta
 from calendar import monthrange
 
@@ -34,163 +35,7 @@ DIAS_SEMANA = {
 }
 
 # ============================================================
-# 2. ESTILOS CSS — Cartelería Digital Máximo Rendimiento Vertical
-# ============================================================
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
-
-    html, body, [data-testid="stAppViewContainer"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #0f172a; /* Fondo ultra oscuro */
-        color: #f8fafc;
-    }
-
-    /* Ocultar elementos de Streamlit */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    [data-testid="stHeader"] {display: none;}
-    [data-testid="stSidebar"] {display: none;}
-    
-    /* Eliminar espacio superior extra de Streamlit */
-    [data-testid="stAppViewContainer"] {
-        padding-top: 0px !important;
-    }
-    .main .block-container {
-        padding-top: 0rem !important;
-        margin-top: 0rem !important;
-    }
-    
-    /* Quitar paddings al máximo para subir todo */
-    .block-container {
-        padding-top: 0.1rem !important;
-        padding-bottom: 1.5rem !important;
-        padding-left: 1.2rem !important;
-        padding-right: 1.2rem !important;
-    }
-
-    /* Cabecera del Monitor */
-    .monitor-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 2px solid #1e293b;
-        padding-bottom: 4px;
-        margin-bottom: 6px;
-        margin-top: 0px;
-    }
-    .monitor-title {
-        font-size: 21px;
-        font-weight: 800;
-        color: #38bdf8;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 0;
-    }
-    .monitor-timeinfo {
-        text-align: right;
-    }
-    .timeinfo-date {
-        font-size: 13px;
-        font-weight: 700;
-        color: #f1f5f9;
-        margin: 0;
-    }
-    .timeinfo-refresh {
-        font-size: 10px;
-        color: #64748b;
-        margin: 0;
-        font-weight: 600;
-    }
-
-    /* Columnas Estilo Aeropuerto */
-    .tv-col-header {
-        text-align: center;
-        font-size: 15px;
-        font-weight: 800;
-        padding: 4px;
-        border-radius: 5px;
-        margin-bottom: 6px;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-    }
-    .tv-col-header.green {
-        background-color: rgba(16, 185, 129, 0.15);
-        color: #34d399;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .tv-col-header.red {
-        background-color: rgba(239, 68, 68, 0.15);
-        color: #f87171;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-    .tv-col-header.grey {
-        background-color: rgba(245, 158, 11, 0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-
-    /* Subcabecera de Turno (Pills) */
-    .turno-sub-header {
-        font-size: 10px;
-        font-weight: 800;
-        color: #94a3b8;
-        background-color: #1e293b;
-        padding: 1px 6px;
-        border-radius: 10px;
-        margin-top: 2px;
-        margin-bottom: 4px;
-        border: 1px solid #334155;
-        display: inline-block;
-        letter-spacing: 0.5px;
-    }
-
-    /* Tarjetas de Pacientes (Diseño Ultra Compacto y de Una Línea) */
-    .tv-card {
-        background-color: #1e293b;
-        border-radius: 5px;
-        padding: 3px 8px;
-        margin-bottom: 3px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        border-left: 3px solid #64748b;
-    }
-    .tv-card.green {
-        border-left-color: #10b981;
-    }
-    .tv-card.red {
-        border-left-color: #ef4444;
-    }
-    .tv-card.grey {
-        border-left-color: #f59e0b;
-    }
-    
-    .tv-patient-name {
-        font-size: 13px;
-        font-weight: 700;
-        color: #ffffff;
-        margin: 0;
-        line-height: 1.1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    /* Footer Fijo en Pantalla a la Izquierda */
-    .tv-footer {
-        position: fixed;
-        bottom: 8px;
-        left: 16px;
-        font-size: 11px;
-        color: #64748b;
-        font-weight: 700;
-        z-index: 999;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# ============================================================
-# 3. REFRESH AUTOMÁTICO INTELIGENTE
+# 2. CONEXIÓN A GOOGLE SHEETS Y CARGA DE DATOS (Sin caché)
 # ============================================================
 # Horario de Argentina (UTC-3)
 tz_arg = timezone(timedelta(hours=-3))
@@ -205,9 +50,6 @@ if es_operativo:
 else:
     st_autorefresh(interval=1800000, key="tv_autorefresh_slow")
 
-# ============================================================
-# 4. CONEXIÓN A GOOGLE SHEETS (OAuth2)
-# ============================================================
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly",
     "https://www.googleapis.com/auth/drive.readonly",
@@ -273,7 +115,7 @@ df_pac = hojas["PACIENTE"]
 df_asis = hojas["ASISTENCIA_DIARIA"]
 
 # ============================================================
-# 5. MOTOR DE CÁLCULO DIARIO
+# 3. MOTOR DE CÁLCULO DIARIO
 # ============================================================
 def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
     dia_semana = DIAS_SEMANA[fecha_sel.weekday()]
@@ -362,6 +204,225 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
 df_hoy = calcular_universo_diario(hoy_arg, df_cron, df_exc, df_pac, df_asis)
 
 # ============================================================
+# 4. AGRUPACIÓN ADAPTATIVA DE ELEMENTOS POR ESTADO
+# ============================================================
+# Creamos listas de elementos (subcabeceras de turno + pacientes) para cada columna
+items_p = []
+for turno in ["Turno 1", "Turno 2", "Turno 3"]:
+    pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Presente")] if not df_hoy.empty else pd.DataFrame()
+    if not pacs.empty:
+        items_p.append({"type": "header", "text": turno.upper()})
+        for _, r in pacs.iterrows():
+            items_p.append({"type": "patient", "name": r["Nombre"], "state": "green"})
+
+items_a = []
+for turno in ["Turno 1", "Turno 2", "Turno 3"]:
+    pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Ausente")] if not df_hoy.empty else pd.DataFrame()
+    if not pacs.empty:
+        items_a.append({"type": "header", "text": turno.upper()})
+        for _, r in pacs.iterrows():
+            items_a.append({"type": "patient", "name": r["Nombre"], "state": "red"})
+
+items_e = []
+for turno in ["Turno 1", "Turno 2", "Turno 3"]:
+    pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Pendiente")] if not df_hoy.empty else pd.DataFrame()
+    if not pacs.empty:
+        items_e.append({"type": "header", "text": turno.upper()})
+        for _, r in pacs.iterrows():
+            items_e.append({"type": "patient", "name": r["Nombre"], "state": "grey"})
+
+# Determinar cantidad óptima de subcolumnas (C_p, C_a, C_e) dinámicamente
+# Con un objetivo de altura de aproximadamente 8-9 filas por columna
+C_p = max(1, math.ceil(len(items_p) / 8)) if items_p else 1
+C_a = max(1, math.ceil(len(items_a) / 8)) if items_a else 1
+C_e = max(1, math.ceil(len(items_e) / 8)) if items_e else 1
+
+# Determinar el máximo de elementos en cualquier columna del monitor
+E_max = max(
+    math.ceil(len(items_p) / C_p) if items_p else 0,
+    math.ceil(len(items_a) / C_a) if items_a else 0,
+    math.ceil(len(items_e) / C_e) if items_e else 0
+)
+C_total = C_p + C_a + C_e
+
+# Ajustar dinámicamente el tamaño de fuente (F), padding (P) y margen (M)
+# de acuerdo a la densidad de elementos en pantalla
+if E_max <= 5:
+    F = 18
+    P = 6
+    M = 6
+elif E_max <= 8:
+    F = 15
+    P = 4
+    M = 4
+elif E_max <= 12:
+    F = 13
+    P = 3
+    M = 3
+else:
+    F = 11
+    P = 2
+    M = 2
+
+# Ajuste adicional por ancho horizontal (si hay muchas columnas)
+if C_total >= 7 and F > 13:
+    F = 13
+    P = max(2, P - 1)
+    M = max(2, M - 1)
+elif C_total >= 9 and F > 11:
+    F = 11
+    P = 2
+    M = 2
+
+# ============================================================
+# 5. ESTILOS CSS CON VARIABLES DINÁMICAS INYECTADAS
+# ============================================================
+st.markdown(f"""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
+
+    html, body, [data-testid="stAppViewContainer"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: #0f172a;
+        color: #f8fafc;
+    }
+
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    [data-testid="stHeader"] {{display: none;}}
+    [data-testid="stSidebar"] {{display: none;}}
+    
+    [data-testid="stAppViewContainer"] {{
+        padding-top: 0px !important;
+    }}
+    .main .block-container {{
+        padding-top: 0rem !important;
+        margin-top: 0rem !important;
+    }}
+    
+    .block-container {{
+        padding-top: 0.1rem !important;
+        padding-bottom: 1.5rem !important;
+        padding-left: 1.2rem !important;
+        padding-right: 1.2rem !important;
+    }}
+
+    .monitor-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #1e293b;
+        padding-bottom: 4px;
+        margin-bottom: 6px;
+        margin-top: 0px;
+    }}
+    .monitor-title {{
+        font-size: 21px;
+        font-weight: 800;
+        color: #38bdf8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }}
+    .monitor-timeinfo {{
+        text-align: right;
+    }}
+    .timeinfo-date {{
+        font-size: 13px;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin: 0;
+    }}
+    .timeinfo-refresh {{
+        font-size: 10px;
+        color: #64748b;
+        margin: 0;
+        font-weight: 600;
+    }}
+
+    .tv-col-header {{
+        text-align: center;
+        font-size: {F + 1}px;
+        font-weight: 800;
+        padding: 4px;
+        border-radius: 5px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+    }}
+    .tv-col-header.green {{
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }}
+    .tv-col-header.red {{
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }}
+    .tv-col-header.grey {{
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }}
+
+    .turno-sub-header {{
+        font-size: {max(9, F - 3)}px;
+        font-weight: 800;
+        color: #94a3b8;
+        background-color: #1e293b;
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin-top: {M - 2 if M > 2 else 1}px;
+        margin-bottom: {M - 2 if M > 2 else 1}px;
+        border: 1px solid #334155;
+        display: inline-block;
+        letter-spacing: 0.5px;
+    }}
+
+    .tv-card {{
+        background-color: #1e293b;
+        border-radius: 5px;
+        padding: {P}px {P + 4}px;
+        margin-bottom: {M}px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        border-left: {max(2, F // 4)}px solid #64748b;
+    }}
+    .tv-card.green {{
+        border-left-color: #10b981;
+    }}
+    .tv-card.red {{
+        border-left-color: #ef4444;
+    }}
+    .tv-card.grey {{
+        border-left-color: #f59e0b;
+    }}
+    
+    .tv-patient-name {{
+        font-size: {F}px;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }}
+
+    .tv-footer {{
+        position: fixed;
+        bottom: 8px;
+        left: 16px;
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 700;
+        z-index: 999;
+    }}
+</style>
+""", unsafe_allow_html=True)
+
+# ============================================================
 # 6. HEADER DEL MONITOR (NEFRA Valle de Uco)
 # ============================================================
 fecha_label = f"{hoy_arg.strftime('%d/%m/%Y')} — {DIAS_SEMANA[hoy_arg.weekday()]}"
@@ -383,75 +444,58 @@ st.markdown(
 )
 
 # ============================================================
-# 7. MAQUETADO DE GRILLA DE AEROPUERTO (Vista Unificada de Doble Columna)
+# 7. MAQUETADO DE GRILLA ADAPTATIVA
 # ============================================================
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
 else:
-    col_presente, col_ausente, col_pendiente = st.columns(3)
+    # Definimos columnas generales asignando anchos proporcionales a sus subcolumnas
+    col_presente, col_ausente, col_pendiente = st.columns([C_p, C_a, C_e])
     
     # 1. EN CAMINO (Presente)
     with col_presente:
         st.markdown('<div class="tv-col-header green">🟢 EN CAMINO</div>', unsafe_allow_html=True)
-        for turno_name in ["Turno 1", "Turno 2", "Turno 3"]:
-            df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Presente")]
-            if not df_t.empty:
-                st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
-                
-                # Crear dos columnas internas para distribuir los pacientes
-                subcols = st.columns(2)
-                mitad = (len(df_t) + 1) // 2
-                df_left = df_t.iloc[:mitad]
-                df_right = df_t.iloc[mitad:]
-                
-                with subcols[0]:
-                    for _, r in df_left.iterrows():
-                        st.markdown(f'<div class="tv-card green"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
-                with subcols[1]:
-                    for _, r in df_right.iterrows():
-                        st.markdown(f'<div class="tv-card green"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
+        if items_p:
+            subcols = st.columns(C_p)
+            filas_p = math.ceil(len(items_p) / C_p)
+            for c_idx in range(C_p):
+                with subcols[c_idx]:
+                    col_items = items_p[c_idx * filas_p : (c_idx + 1) * filas_p]
+                    for item in col_items:
+                        if item["type"] == "header":
+                            st.markdown(f'<div class="turno-sub-header">{item["text"]}</div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(f'<div class="tv-card green"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
                 
     # 2. NO ASISTE (Ausente)
     with col_ausente:
         st.markdown('<div class="tv-col-header red">🔴 NO ASISTE</div>', unsafe_allow_html=True)
-        for turno_name in ["Turno 1", "Turno 2", "Turno 3"]:
-            df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Ausente")]
-            if not df_t.empty:
-                st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
-                
-                # Crear dos columnas internas para distribuir los pacientes
-                subcols = st.columns(2)
-                mitad = (len(df_t) + 1) // 2
-                df_left = df_t.iloc[:mitad]
-                df_right = df_t.iloc[mitad:]
-                
-                with subcols[0]:
-                    for _, r in df_left.iterrows():
-                        st.markdown(f'<div class="tv-card red"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
-                with subcols[1]:
-                    for _, r in df_right.iterrows():
-                        st.markdown(f'<div class="tv-card red"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
+        if items_a:
+            subcols = st.columns(C_a)
+            filas_a = math.ceil(len(items_a) / C_a)
+            for c_idx in range(C_a):
+                with subcols[c_idx]:
+                    col_items = items_a[c_idx * filas_a : (c_idx + 1) * filas_a]
+                    for item in col_items:
+                        if item["type"] == "header":
+                            st.markdown(f'<div class="turno-sub-header">{item["text"]}</div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(f'<div class="tv-card red"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
                 
     # 3. EN ESPERA (Pendiente)
     with col_pendiente:
         st.markdown('<div class="tv-col-header grey">🟡 EN ESPERA</div>', unsafe_allow_html=True)
-        for turno_name in ["Turno 1", "Turno 2", "Turno 3"]:
-            df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Pendiente")]
-            if not df_t.empty:
-                st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
-                
-                # Crear dos columnas internas para distribuir los pacientes
-                subcols = st.columns(2)
-                mitad = (len(df_t) + 1) // 2
-                df_left = df_t.iloc[:mitad]
-                df_right = df_t.iloc[mitad:]
-                
-                with subcols[0]:
-                    for _, r in df_left.iterrows():
-                        st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
-                with subcols[1]:
-                    for _, r in df_right.iterrows():
-                        st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
+        if items_e:
+            subcols = st.columns(C_e)
+            filas_e = math.ceil(len(items_e) / C_e)
+            for c_idx in range(C_e):
+                with subcols[c_idx]:
+                    col_items = items_e[c_idx * filas_e : (c_idx + 1) * filas_e]
+                    for item in col_items:
+                        if item["type"] == "header":
+                            st.markdown(f'<div class="turno-sub-header">{item["text"]}</div>', unsafe_allow_html=True)
+                        else:
+                            st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
 
 # ============================================================
 # 8. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
