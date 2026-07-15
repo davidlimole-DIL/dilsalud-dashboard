@@ -1,5 +1,5 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v6
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v7
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
@@ -206,7 +206,6 @@ df_hoy = calcular_universo_diario(hoy_arg, df_cron, df_exc, df_pac, df_asis)
 # ============================================================
 # 4. AGRUPACIÓN ADAPTATIVA DE ELEMENTOS POR ESTADO
 # ============================================================
-# Creamos listas de elementos (subcabeceras de turno + pacientes) para cada columna
 items_p = []
 for turno in ["Turno 1", "Turno 2", "Turno 3"]:
     pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Presente")] if not df_hoy.empty else pd.DataFrame()
@@ -246,16 +245,13 @@ E_max = max(
 C_total = C_p + C_a + C_e
 
 # ============================================================
-# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE (Auto-Scaling continuo)
+# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE
 # ============================================================
-# Altura útil disponible de la pantalla de TV aproximada en píxeles
 target_height = 680
 safe_emax = max(1, E_max)
 
 # Altura proporcional teórica para cada elemento
 item_height = target_height / safe_emax
-
-# Capping superior e inferior de altura por elemento
 item_height = min(75.0, max(22.0, item_height))
 
 # Proporciones adaptativas basadas en la altura calculada
@@ -273,8 +269,12 @@ elif C_total >= 9 and F > 11:
     P = max(2, P - 2)
     M = max(2, M - 2)
 
+# Capping de fuentes para cabeceras y turnos para evitar tamaños grotescos
+col_header_font_size = min(22, max(14, int(F * 1.1)))
+turno_header_font_size = min(15, max(10, int(F * 0.85)))
+
 # ============================================================
-# 6. ESTILOS CSS DINÁMICOS
+# 6. ESTILOS CSS DINÁMICOS (Escapando correctamente las llaves)
 # ============================================================
 st.markdown(f"""
 <style>
@@ -342,7 +342,7 @@ st.markdown(f"""
 
     .tv-col-header {{
         text-align: center;
-        font-size: {max(14, F + 1)}px;
+        font-size: {col_header_font_size}px;
         font-weight: 800;
         padding: 4px;
         border-radius: 5px;
@@ -366,27 +366,35 @@ st.markdown(f"""
         border: 1px solid rgba(245, 158, 11, 0.3);
     }}
 
+    .tv-subcolumns-wrapper {{
+        column-gap: 12px;
+    }}
+
     .turno-sub-header {{
-        font-size: {max(9, F - 3)}px;
+        break-inside: avoid;
+        display: block;
+        font-size: {turno_header_font_size}px;
         font-weight: 800;
         color: #94a3b8;
         background-color: #1e293b;
         padding: 1px 6px;
         border-radius: 10px;
-        margin-top: {M - 2 if M > 2 else 1}px;
-        margin-bottom: {M - 2 if M > 2 else 1}px;
+        margin-top: {M - 1 if M > 1 else 1}px;
+        margin-bottom: {M - 1 if M > 1 else 1}px;
         border: 1px solid #334155;
-        display: inline-block;
+        width: fit-content;
         letter-spacing: 0.5px;
     }}
 
     .tv-card {{
+        break-inside: avoid;
         background-color: #1e293b;
         border-radius: 5px;
         padding: {P}px {P + 4}px;
         margin-bottom: {M}px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         border-left: {max(2, F // 4)}px solid #64748b;
+        display: block;
     }}
     .tv-card.green {{
         border-left-color: #10b981;
@@ -443,7 +451,7 @@ st.markdown(
 )
 
 # ============================================================
-# 8. MAQUETADO DE GRILLA ADAPTATIVA
+# 8. MAQUETADO DE GRILLA ADAPTATIVA (CSS Column-Count para máximo ancho horizontal)
 # ============================================================
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
@@ -455,46 +463,40 @@ else:
     with col_presente:
         st.markdown('<div class="tv-col-header green">🟢 EN CAMINO</div>', unsafe_allow_html=True)
         if items_p:
-            subcols = st.columns(C_p)
-            filas_p = math.ceil(len(items_p) / C_p)
-            for c_idx in range(C_p):
-                with subcols[c_idx]:
-                    col_items = items_p[c_idx * filas_p : (c_idx + 1) * filas_p]
-                    for item in col_items:
-                        if item["type"] == "header":
-                            st.markdown(f'<div class="turno-sub-header">{item["text"]}</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<div class="tv-card green"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
+            html_p = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_p};">'
+            for item in items_p:
+                if item["type"] == "header":
+                    html_p += f'<div class="turno-sub-header">{item["text"]}</div>'
+                else:
+                    html_p += f'<div class="tv-card green"><p class="tv-patient-name">{item["name"]}</p></div>'
+            html_p += '</div>'
+            st.markdown(html_p, unsafe_allow_html=True)
                 
     # 2. NO ASISTE (Ausente)
     with col_ausente:
         st.markdown('<div class="tv-col-header red">🔴 NO ASISTE</div>', unsafe_allow_html=True)
         if items_a:
-            subcols = st.columns(C_a)
-            filas_a = math.ceil(len(items_a) / C_a)
-            for c_idx in range(C_a):
-                with subcols[c_idx]:
-                    col_items = items_a[c_idx * filas_a : (c_idx + 1) * filas_a]
-                    for item in col_items:
-                        if item["type"] == "header":
-                            st.markdown(f'<div class="turno-sub-header">{item["text"]}</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<div class="tv-card red"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
+            html_a = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_a};">'
+            for item in items_a:
+                if item["type"] == "header":
+                    html_a += f'<div class="turno-sub-header">{item["text"]}</div>'
+                else:
+                    html_a += f'<div class="tv-card red"><p class="tv-patient-name">{item["name"]}</p></div>'
+            html_a += '</div>'
+            st.markdown(html_a, unsafe_allow_html=True)
                 
     # 3. EN ESPERA (Pendiente)
     with col_pendiente:
         st.markdown('<div class="tv-col-header grey">🟡 EN ESPERA</div>', unsafe_allow_html=True)
         if items_e:
-            subcols = st.columns(C_e)
-            filas_e = math.ceil(len(items_e) / C_e)
-            for c_idx in range(C_e):
-                with subcols[c_idx]:
-                    col_items = items_e[c_idx * filas_e : (c_idx + 1) * filas_e]
-                    for item in col_items:
-                        if item["type"] == "header":
-                            st.markdown(f'<div class="turno-sub-header">{item["text"]}</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
+            html_e = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_e};">'
+            for item in items_e:
+                if item["type"] == "header":
+                    html_e += f'<div class="turno-sub-header">{item["text"]}</div>'
+                else:
+                    html_e += f'<div class="tv-card grey"><p class="tv-patient-name">{item["name"]}</p></div>'
+            html_e += '</div>'
+            st.markdown(html_e, unsafe_allow_html=True)
 
 # ============================================================
 # 9. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
