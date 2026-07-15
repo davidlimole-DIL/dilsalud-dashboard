@@ -1,8 +1,8 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v3
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v4
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
-# Cero interacción, autorefresco de 5 minutos, diseño de aeropuerto ultra-compacto.
+# Cero interacción, autorefresco de 5 minutos, diseño de aeropuerto ultra-compacto de doble columna por estado.
 # ============================================================
 
 import os
@@ -34,7 +34,7 @@ DIAS_SEMANA = {
 }
 
 # ============================================================
-# 2. ESTILOS CSS — Cartelería Digital Ultra Compacta sin Scroll
+# 2. ESTILOS CSS — Cartelería Digital Máximo Rendimiento Vertical
 # ============================================================
 st.markdown("""
 <style>
@@ -52,12 +52,21 @@ st.markdown("""
     [data-testid="stHeader"] {display: none;}
     [data-testid="stSidebar"] {display: none;}
     
+    /* Eliminar espacio superior extra de Streamlit */
+    [data-testid="stAppViewContainer"] {
+        padding-top: 0px !important;
+    }
+    .main .block-container {
+        padding-top: 0rem !important;
+        margin-top: 0rem !important;
+    }
+    
     /* Quitar paddings al máximo para subir todo */
     .block-container {
-        padding-top: 0.5rem !important;
+        padding-top: 0.1rem !important;
         padding-bottom: 1.5rem !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+        padding-left: 1.2rem !important;
+        padding-right: 1.2rem !important;
     }
 
     /* Cabecera del Monitor */
@@ -66,11 +75,12 @@ st.markdown("""
         justify-content: space-between;
         align-items: center;
         border-bottom: 2px solid #1e293b;
-        padding-bottom: 6px;
-        margin-bottom: 10px;
+        padding-bottom: 4px;
+        margin-bottom: 6px;
+        margin-top: 0px;
     }
     .monitor-title {
-        font-size: 22px;
+        font-size: 21px;
         font-weight: 800;
         color: #38bdf8;
         display: flex;
@@ -82,13 +92,13 @@ st.markdown("""
         text-align: right;
     }
     .timeinfo-date {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         color: #f1f5f9;
         margin: 0;
     }
     .timeinfo-refresh {
-        font-size: 11px;
+        font-size: 10px;
         color: #64748b;
         margin: 0;
         font-weight: 600;
@@ -97,13 +107,13 @@ st.markdown("""
     /* Columnas Estilo Aeropuerto */
     .tv-col-header {
         text-align: center;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 800;
-        padding: 5px;
-        border-radius: 6px;
-        margin-bottom: 8px;
+        padding: 4px;
+        border-radius: 5px;
+        margin-bottom: 6px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
     }
     .tv-col-header.green {
         background-color: rgba(16, 185, 129, 0.15);
@@ -123,14 +133,14 @@ st.markdown("""
 
     /* Subcabecera de Turno (Pills) */
     .turno-sub-header {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
         color: #94a3b8;
         background-color: #1e293b;
-        padding: 2px 8px;
-        border-radius: 12px;
-        margin-top: 6px;
-        margin-bottom: 5px;
+        padding: 1px 6px;
+        border-radius: 10px;
+        margin-top: 2px;
+        margin-bottom: 4px;
         border: 1px solid #334155;
         display: inline-block;
         letter-spacing: 0.5px;
@@ -139,11 +149,11 @@ st.markdown("""
     /* Tarjetas de Pacientes (Diseño Ultra Compacto y de Una Línea) */
     .tv-card {
         background-color: #1e293b;
-        border-radius: 6px;
-        padding: 4px 10px;
-        margin-bottom: 4px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border-left: 4px solid #64748b;
+        border-radius: 5px;
+        padding: 3px 8px;
+        margin-bottom: 3px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        border-left: 3px solid #64748b;
     }
     .tv-card.green {
         border-left-color: #10b981;
@@ -156,7 +166,7 @@ st.markdown("""
     }
     
     .tv-patient-name {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         color: #ffffff;
         margin: 0;
@@ -166,11 +176,11 @@ st.markdown("""
         text-overflow: ellipsis;
     }
 
-    /* Footer Fijo en Pantalla */
+    /* Footer Fijo en Pantalla a la Izquierda */
     .tv-footer {
         position: fixed;
         bottom: 8px;
-        right: 16px;
+        left: 16px;
         font-size: 11px;
         color: #64748b;
         font-weight: 700;
@@ -373,7 +383,7 @@ st.markdown(
 )
 
 # ============================================================
-# 7. MAQUETADO DE GRILLA DE AEROPUERTO (Vista Unificada)
+# 7. MAQUETADO DE GRILLA DE AEROPUERTO (Vista Unificada de Doble Columna)
 # ============================================================
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
@@ -387,16 +397,19 @@ else:
             df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Presente")]
             if not df_t.empty:
                 st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
-                for _, r in df_t.iterrows():
-                    nombre = r["Nombre"]
-                    st.markdown(
-                        f"""
-                        <div class="tv-card green">
-                            <p class="tv-patient-name">{nombre}</p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                
+                # Crear dos columnas internas para distribuir los pacientes
+                subcols = st.columns(2)
+                mitad = (len(df_t) + 1) // 2
+                df_left = df_t.iloc[:mitad]
+                df_right = df_t.iloc[mitad:]
+                
+                with subcols[0]:
+                    for _, r in df_left.iterrows():
+                        st.markdown(f'<div class="tv-card green"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
+                with subcols[1]:
+                    for _, r in df_right.iterrows():
+                        st.markdown(f'<div class="tv-card green"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
                 
     # 2. NO ASISTE (Ausente)
     with col_ausente:
@@ -405,16 +418,19 @@ else:
             df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Ausente")]
             if not df_t.empty:
                 st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
-                for _, r in df_t.iterrows():
-                    nombre = r["Nombre"]
-                    st.markdown(
-                        f"""
-                        <div class="tv-card red">
-                            <p class="tv-patient-name">{nombre}</p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                
+                # Crear dos columnas internas para distribuir los pacientes
+                subcols = st.columns(2)
+                mitad = (len(df_t) + 1) // 2
+                df_left = df_t.iloc[:mitad]
+                df_right = df_t.iloc[mitad:]
+                
+                with subcols[0]:
+                    for _, r in df_left.iterrows():
+                        st.markdown(f'<div class="tv-card red"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
+                with subcols[1]:
+                    for _, r in df_right.iterrows():
+                        st.markdown(f'<div class="tv-card red"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
                 
     # 3. EN ESPERA (Pendiente)
     with col_pendiente:
@@ -423,19 +439,22 @@ else:
             df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Pendiente")]
             if not df_t.empty:
                 st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
-                for _, r in df_t.iterrows():
-                    nombre = r["Nombre"]
-                    st.markdown(
-                        f"""
-                        <div class="tv-card grey">
-                            <p class="tv-patient-name">{nombre}</p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                
+                # Crear dos columnas internas para distribuir los pacientes
+                subcols = st.columns(2)
+                mitad = (len(df_t) + 1) // 2
+                df_left = df_t.iloc[:mitad]
+                df_right = df_t.iloc[mitad:]
+                
+                with subcols[0]:
+                    for _, r in df_left.iterrows():
+                        st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
+                with subcols[1]:
+                    for _, r in df_right.iterrows():
+                        st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{r["Nombre"]}</p></div>', unsafe_allow_html=True)
 
 # ============================================================
-# 8. FOOTER FIJO EN PANTALLA
+# 8. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
 # ============================================================
 st.markdown(
     """
