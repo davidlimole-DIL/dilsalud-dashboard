@@ -1,5 +1,5 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v5
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v6
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
@@ -232,7 +232,7 @@ for turno in ["Turno 1", "Turno 2", "Turno 3"]:
             items_e.append({"type": "patient", "name": r["Nombre"], "state": "grey"})
 
 # Determinar cantidad óptima de subcolumnas (C_p, C_a, C_e) dinámicamente
-# Con un objetivo de altura de aproximadamente 8-9 filas por columna
+# Con un objetivo de altura de aproximadamente 8 filas por columna
 C_p = max(1, math.ceil(len(items_p) / 8)) if items_p else 1
 C_a = max(1, math.ceil(len(items_a) / 8)) if items_a else 1
 C_e = max(1, math.ceil(len(items_e) / 8)) if items_e else 1
@@ -245,37 +245,36 @@ E_max = max(
 )
 C_total = C_p + C_a + C_e
 
-# Ajustar dinámicamente el tamaño de fuente (F), padding (P) y margen (M)
-# de acuerdo a la densidad de elementos en pantalla
-if E_max <= 5:
-    F = 18
-    P = 6
-    M = 6
-elif E_max <= 8:
-    F = 15
-    P = 4
-    M = 4
-elif E_max <= 12:
-    F = 13
-    P = 3
-    M = 3
-else:
-    F = 11
-    P = 2
-    M = 2
+# ============================================================
+# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE (Auto-Scaling continuo)
+# ============================================================
+# Altura útil disponible de la pantalla de TV aproximada en píxeles
+target_height = 680
+safe_emax = max(1, E_max)
 
-# Ajuste adicional por ancho horizontal (si hay muchas columnas)
+# Altura proporcional teórica para cada elemento
+item_height = target_height / safe_emax
+
+# Capping superior e inferior de altura por elemento
+item_height = min(75.0, max(22.0, item_height))
+
+# Proporciones adaptativas basadas en la altura calculada
+F = max(11, int(item_height * 0.44))  # Tamaño de fuente (mínimo 11px)
+P = max(2, int(item_height * 0.16))   # Relleno vertical (mínimo 2px)
+M = max(2, int(item_height * 0.14))   # Separación inferior (mínimo 2px)
+
+# Ajuste por ancho horizontal (si hay muchas subcolumnas, reducimos un poco la fuente)
 if C_total >= 7 and F > 13:
-    F = 13
+    F = max(13, F - 2)
     P = max(2, P - 1)
     M = max(2, M - 1)
 elif C_total >= 9 and F > 11:
-    F = 11
-    P = 2
-    M = 2
+    F = max(11, F - 4)
+    P = max(2, P - 2)
+    M = max(2, M - 2)
 
 # ============================================================
-# 5. ESTILOS CSS CON VARIABLES DINÁMICAS INYECTADAS
+# 6. ESTILOS CSS DINÁMICOS
 # ============================================================
 st.markdown(f"""
 <style>
@@ -302,7 +301,7 @@ st.markdown(f"""
     
     .block-container {{
         padding-top: 0.1rem !important;
-        padding-bottom: 1.5rem !important;
+        padding-bottom: 2.2rem !important;
         padding-left: 1.2rem !important;
         padding-right: 1.2rem !important;
     }}
@@ -313,7 +312,7 @@ st.markdown(f"""
         align-items: center;
         border-bottom: 2px solid #1e293b;
         padding-bottom: 4px;
-        margin-bottom: 6px;
+        margin-bottom: 8px;
         margin-top: 0px;
     }}
     .monitor-title {{
@@ -343,7 +342,7 @@ st.markdown(f"""
 
     .tv-col-header {{
         text-align: center;
-        font-size: {F + 1}px;
+        font-size: {max(14, F + 1)}px;
         font-weight: 800;
         padding: 4px;
         border-radius: 5px;
@@ -423,7 +422,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 6. HEADER DEL MONITOR (NEFRA Valle de Uco)
+# 7. HEADER DEL MONITOR
 # ============================================================
 fecha_label = f"{hoy_arg.strftime('%d/%m/%Y')} — {DIAS_SEMANA[hoy_arg.weekday()]}"
 actualizado_label = ahora_arg.strftime("%H:%M:%S")
@@ -444,7 +443,7 @@ st.markdown(
 )
 
 # ============================================================
-# 7. MAQUETADO DE GRILLA ADAPTATIVA
+# 8. MAQUETADO DE GRILLA ADAPTATIVA
 # ============================================================
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
@@ -498,7 +497,7 @@ else:
                             st.markdown(f'<div class="tv-card grey"><p class="tv-patient-name">{item["name"]}</p></div>', unsafe_allow_html=True)
 
 # ============================================================
-# 8. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
+# 9. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
 # ============================================================
 st.markdown(
     """
