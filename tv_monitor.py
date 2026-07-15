@@ -1,8 +1,8 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v2
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v3
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
-# Cero interacción, autorefresco de 5 minutos, diseño de aeropuerto.
+# Cero interacción, autorefresco de 5 minutos, diseño de aeropuerto ultra-compacto.
 # ============================================================
 
 import os
@@ -22,7 +22,7 @@ from streamlit_autorefresh import st_autorefresh
 # 1. CONFIGURACIÓN DE PÁGINA (Sin barra lateral)
 # ============================================================
 st.set_page_config(
-    page_title="FAUJIDA | Monitor TV",
+    page_title="NEFRA Valle de Uco | Monitor TV",
     page_icon="📺",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -34,7 +34,7 @@ DIAS_SEMANA = {
 }
 
 # ============================================================
-# 2. ESTILOS CSS — Cartelería Digital Sin Interacción (Cero Menús)
+# 2. ESTILOS CSS — Cartelería Digital Ultra Compacta sin Scroll
 # ============================================================
 st.markdown("""
 <style>
@@ -42,7 +42,7 @@ st.markdown("""
 
     html, body, [data-testid="stAppViewContainer"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
-        background-color: #0f172a; /* Fondo ultra oscuro para alto contraste */
+        background-color: #0f172a; /* Fondo ultra oscuro */
         color: #f8fafc;
     }
 
@@ -52,12 +52,12 @@ st.markdown("""
     [data-testid="stHeader"] {display: none;}
     [data-testid="stSidebar"] {display: none;}
     
-    /* Quitar padding de Streamlit */
+    /* Quitar paddings al máximo para subir todo */
     .block-container {
-        padding-top: 1.2rem !important;
-        padding-bottom: 2.5rem !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 1.5rem !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
     }
 
     /* Cabecera del Monitor */
@@ -65,85 +65,85 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 3px solid #1e293b;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
+        border-bottom: 2px solid #1e293b;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
     }
     .monitor-title {
-        font-size: 30px;
+        font-size: 22px;
         font-weight: 800;
-        color: #38bdf8; /* Celeste moderno */
+        color: #38bdf8;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         margin: 0;
     }
     .monitor-timeinfo {
         text-align: right;
     }
     .timeinfo-date {
-        font-size: 18px;
+        font-size: 14px;
         font-weight: 700;
         color: #f1f5f9;
         margin: 0;
     }
     .timeinfo-refresh {
-        font-size: 13px;
+        font-size: 11px;
         color: #64748b;
-        margin: 1px 0 0 0;
+        margin: 0;
         font-weight: 600;
     }
 
     /* Columnas Estilo Aeropuerto */
     .tv-col-header {
         text-align: center;
-        font-size: 22px;
+        font-size: 16px;
         font-weight: 800;
-        padding: 8px;
-        border-radius: 8px;
-        margin-bottom: 12px;
+        padding: 5px;
+        border-radius: 6px;
+        margin-bottom: 8px;
         text-transform: uppercase;
-        letter-spacing: 1.2px;
+        letter-spacing: 1px;
     }
     .tv-col-header.green {
         background-color: rgba(16, 185, 129, 0.15);
         color: #34d399;
-        border: 2px solid rgba(16, 185, 129, 0.3);
+        border: 1px solid rgba(16, 185, 129, 0.3);
     }
     .tv-col-header.red {
         background-color: rgba(239, 68, 68, 0.15);
         color: #f87171;
-        border: 2px solid rgba(239, 68, 68, 0.3);
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
     .tv-col-header.grey {
         background-color: rgba(245, 158, 11, 0.15);
         color: #fbbf24;
-        border: 2px solid rgba(245, 158, 11, 0.3);
+        border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
     /* Subcabecera de Turno (Pills) */
     .turno-sub-header {
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 800;
         color: #94a3b8;
         background-color: #1e293b;
-        padding: 4px 12px;
-        border-radius: 20px;
-        margin-top: 10px;
-        margin-bottom: 8px;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-top: 6px;
+        margin-bottom: 5px;
         border: 1px solid #334155;
         display: inline-block;
         letter-spacing: 0.5px;
     }
 
-    /* Tarjetas de Pacientes (Diseño Compacto para evitar scroll) */
+    /* Tarjetas de Pacientes (Diseño Ultra Compacto y de Una Línea) */
     .tv-card {
         background-color: #1e293b;
-        border-radius: 8px;
-        padding: 10px 14px;
-        margin-bottom: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 5px solid #64748b;
+        border-radius: 6px;
+        padding: 4px 10px;
+        margin-bottom: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-left: 4px solid #64748b;
     }
     .tv-card.green {
         border-left-color: #10b981;
@@ -152,31 +152,26 @@ st.markdown("""
         border-left-color: #ef4444;
     }
     .tv-card.grey {
-        border-left-color: #f59e0b; /* Amarillo/Naranja en espera */
+        border-left-color: #f59e0b;
     }
     
     .tv-patient-name {
-        font-size: 18px;
+        font-size: 14px;
         font-weight: 700;
         color: #ffffff;
         margin: 0;
-        line-height: 1.2;
-    }
-    .tv-patient-details {
-        font-size: 12px;
-        color: #94a3b8;
-        margin-top: 4px;
-        font-weight: 600;
-        display: flex;
-        justify-content: space-between;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Footer Fijo en Pantalla */
     .tv-footer {
         position: fixed;
-        bottom: 12px;
-        right: 24px;
-        font-size: 13px;
+        bottom: 8px;
+        right: 16px;
+        font-size: 11px;
         color: #64748b;
         font-weight: 700;
         z-index: 999;
@@ -196,10 +191,8 @@ hoy_arg = ahora_arg.date()
 es_operativo = (ahora_arg.weekday() <= 5) and (5 <= ahora_arg.hour < 18)
 
 if es_operativo:
-    # 5 minutos (300,000 ms) en horario de clínica
     st_autorefresh(interval=300000, key="tv_autorefresh")
 else:
-    # 30 minutos (1,800,000 ms) fuera de horario operativo
     st_autorefresh(interval=1800000, key="tv_autorefresh_slow")
 
 # ============================================================
@@ -346,8 +339,8 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
             if reg.empty:
                 continue
             r = reg.iloc[0]
-            estado = str(r.get("Estado", "")).strip().upper()
-            df.at[idx, "Asistencia"] = "Presente" if estado in ("TRUE", "VERDADERO", "1", "SI", "SÍ") else "Ausente"
+            role_est = str(r.get("Estado", "")).strip().upper()
+            df.at[idx, "Asistencia"] = "Presente" if role_est in ("TRUE", "VERDADERO", "1", "SI", "SÍ") else "Ausente"
             df.at[idx, "Observaciones"] = str(r.get("Observaciones", "")).strip()
             m = re.search(r"(\d{1,2}):(\d{2})", str(r.get("Marca_Temporal", "")))
             if m:
@@ -359,7 +352,7 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
 df_hoy = calcular_universo_diario(hoy_arg, df_cron, df_exc, df_pac, df_asis)
 
 # ============================================================
-# 6. HEADER DEL MONITOR (FAUJIDA)
+# 6. HEADER DEL MONITOR (NEFRA Valle de Uco)
 # ============================================================
 fecha_label = f"{hoy_arg.strftime('%d/%m/%Y')} — {DIAS_SEMANA[hoy_arg.weekday()]}"
 actualizado_label = ahora_arg.strftime("%H:%M:%S")
@@ -368,7 +361,7 @@ st.markdown(
     f"""
     <div class="monitor-header">
         <div class="monitor-title">
-            <span>🏥</span> FAUJIDA — Monitor de Recepción
+            <span>🏥</span> NEFRA Valle de Uco — Monitor de Recepción
         </div>
         <div class="monitor-timeinfo">
             <div class="timeinfo-date">{fecha_label}</div>
@@ -396,16 +389,10 @@ else:
                 st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
                 for _, r in df_t.iterrows():
                     nombre = r["Nombre"]
-                    movil = r["Móvil"]
-                    hora = f" ({r['Hora']})" if r["Hora"] else ""
                     st.markdown(
                         f"""
                         <div class="tv-card green">
                             <p class="tv-patient-name">{nombre}</p>
-                            <div class="tv-patient-details">
-                                <span>Vehículo: {movil}</span>
-                                <span>Hora: {hora if hora else 'En camino'}</span>
-                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -420,16 +407,10 @@ else:
                 st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
                 for _, r in df_t.iterrows():
                     nombre = r["Nombre"]
-                    movil = r["Móvil"]
-                    obs = f" — {r['Observaciones']}" if r["Observaciones"] else ""
                     st.markdown(
                         f"""
                         <div class="tv-card red">
                             <p class="tv-patient-name">{nombre}</p>
-                            <div class="tv-patient-details">
-                                <span>Vehículo: {movil}</span>
-                                <span>{obs if obs else 'Cancelado'}</span>
-                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -444,16 +425,10 @@ else:
                 st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
                 for _, r in df_t.iterrows():
                     nombre = r["Nombre"]
-                    movil = r["Móvil"]
-                    destino = r["Destino"]
                     st.markdown(
                         f"""
                         <div class="tv-card grey">
                             <p class="tv-patient-name">{nombre}</p>
-                            <div class="tv-patient-details">
-                                <span>Vehículo: {movil}</span>
-                                <span>Destino: {destino}</span>
-                            </div>
                         </div>
                         """,
                         unsafe_allow_html=True
