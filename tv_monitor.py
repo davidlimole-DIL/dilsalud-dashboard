@@ -281,11 +281,11 @@ st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
 
-    html, body, [data-testid="stAppViewContainer"] {
+    html, body, [data-testid="stAppViewContainer"] {{
         font-family: 'Plus Jakarta Sans', sans-serif;
         background-color: #0f172a;
         color: #f8fafc;
-    }
+    }}
 
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
