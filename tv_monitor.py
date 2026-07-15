@@ -1,5 +1,5 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v1
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v2
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos, diseño de aeropuerto.
@@ -22,7 +22,7 @@ from streamlit_autorefresh import st_autorefresh
 # 1. CONFIGURACIÓN DE PÁGINA (Sin barra lateral)
 # ============================================================
 st.set_page_config(
-    page_title="DIL-Salud | Monitor TV",
+    page_title="FAUJIDA | Monitor TV",
     page_icon="📺",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -54,33 +54,10 @@ st.markdown("""
     
     /* Quitar padding de Streamlit */
     .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 0rem !important;
+        padding-top: 1.2rem !important;
+        padding-bottom: 2.5rem !important;
         padding-left: 2rem !important;
         padding-right: 2rem !important;
-    }
-
-    /* Pestañas (st.tabs) estilizadas gigantes para control remoto */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 20px;
-        background-color: #1e293b;
-        padding: 8px 16px;
-        border-radius: 12px;
-        justify-content: center;
-        margin-bottom: 25px;
-        border-bottom: none;
-    }
-    .stTabs [data-baseweb="tab"] {
-        font-size: 24px !important;
-        font-weight: 800 !important;
-        color: #94a3b8 !important;
-        padding: 10px 30px !important;
-        border-radius: 8px !important;
-        border: none !important;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #3b82f6 !important;
-        color: #ffffff !important;
     }
 
     /* Cabecera del Monitor */
@@ -89,11 +66,11 @@ st.markdown("""
         justify-content: space-between;
         align-items: center;
         border-bottom: 3px solid #1e293b;
-        padding-bottom: 12px;
-        margin-bottom: 20px;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
     }
     .monitor-title {
-        font-size: 32px;
+        font-size: 30px;
         font-weight: 800;
         color: #38bdf8; /* Celeste moderno */
         display: flex;
@@ -105,28 +82,28 @@ st.markdown("""
         text-align: right;
     }
     .timeinfo-date {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         color: #f1f5f9;
         margin: 0;
     }
     .timeinfo-refresh {
-        font-size: 14px;
+        font-size: 13px;
         color: #64748b;
-        margin: 2px 0 0 0;
+        margin: 1px 0 0 0;
         font-weight: 600;
     }
 
     /* Columnas Estilo Aeropuerto */
     .tv-col-header {
         text-align: center;
-        font-size: 28px;
+        font-size: 22px;
         font-weight: 800;
-        padding: 12px;
-        border-radius: 10px;
-        margin-bottom: 20px;
+        padding: 8px;
+        border-radius: 8px;
+        margin-bottom: 12px;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.2px;
     }
     .tv-col-header.green {
         background-color: rgba(16, 185, 129, 0.15);
@@ -139,20 +116,34 @@ st.markdown("""
         border: 2px solid rgba(239, 68, 68, 0.3);
     }
     .tv-col-header.grey {
-        background-color: rgba(148, 163, 184, 0.15);
-        color: #cbd5e1;
-        border: 2px solid rgba(148, 163, 184, 0.3);
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 2px solid rgba(245, 158, 11, 0.3);
     }
 
-    /* Tarjetas de Pacientes */
+    /* Subcabecera de Turno (Pills) */
+    .turno-sub-header {
+        font-size: 13px;
+        font-weight: 800;
+        color: #94a3b8;
+        background-color: #1e293b;
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-top: 10px;
+        margin-bottom: 8px;
+        border: 1px solid #334155;
+        display: inline-block;
+        letter-spacing: 0.5px;
+    }
+
+    /* Tarjetas de Pacientes (Diseño Compacto para evitar scroll) */
     .tv-card {
         background-color: #1e293b;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-        border-left: 6px solid #64748b;
-        transition: transform 0.2s ease;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 5px solid #64748b;
     }
     .tv-card.green {
         border-left-color: #10b981;
@@ -165,25 +156,36 @@ st.markdown("""
     }
     
     .tv-patient-name {
-        font-size: 22px;
+        font-size: 18px;
         font-weight: 700;
         color: #ffffff;
         margin: 0;
         line-height: 1.2;
     }
     .tv-patient-details {
-        font-size: 14px;
+        font-size: 12px;
         color: #94a3b8;
-        margin-top: 6px;
+        margin-top: 4px;
         font-weight: 600;
         display: flex;
         justify-content: space-between;
+    }
+
+    /* Footer Fijo en Pantalla */
+    .tv-footer {
+        position: fixed;
+        bottom: 12px;
+        right: 24px;
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 700;
+        z-index: 999;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 3. REFRESH AUTOMÁTICO INTELIGENTE (Seguridad ante cuotas de API)
+# 3. REFRESH AUTOMÁTICO INTELIGENTE
 # ============================================================
 # Horario de Argentina (UTC-3)
 tz_arg = timezone(timedelta(hours=-3))
@@ -197,7 +199,7 @@ if es_operativo:
     # 5 minutos (300,000 ms) en horario de clínica
     st_autorefresh(interval=300000, key="tv_autorefresh")
 else:
-    # 30 minutos (1,800,000 ms) fuera de horario operativo para optimizar cuota de Google
+    # 30 minutos (1,800,000 ms) fuera de horario operativo
     st_autorefresh(interval=1800000, key="tv_autorefresh_slow")
 
 # ============================================================
@@ -211,7 +213,6 @@ _AUTH_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".streamlit
 _AUTHORIZED_USER = os.path.join(_AUTH_DIR, "authorized_user.json")
 
 def _cargar_credenciales_oauth():
-    """Carga credenciales desde secretos en Cloud o desde archivo local."""
     try:
         auth_info = dict(st.secrets["oauth_credentials"])
         return OAuthCredentials(
@@ -226,7 +227,7 @@ def _cargar_credenciales_oauth():
         pass
 
     if not os.path.exists(_AUTHORIZED_USER):
-        st.error("❌ Credenciales OAuth no encontradas. Ejecute setup_auth.py primero.")
+        st.error("❌ Credenciales OAuth no encontradas.")
         st.stop()
 
     with open(_AUTHORIZED_USER, "r") as f:
@@ -242,7 +243,6 @@ def _cargar_credenciales_oauth():
     )
 
 def cargar_datos_tv_limpios():
-    """Lectura limpia y sin caché de Google Sheets para cartelería digital."""
     creds = _cargar_credenciales_oauth()
     client = gspread.authorize(creds)
     spreadsheet = client.open_by_url(st.secrets["google_sheets"]["spreadsheet_url"])
@@ -270,13 +270,12 @@ df_pac = hojas["PACIENTE"]
 df_asis = hojas["ASISTENCIA_DIARIA"]
 
 # ============================================================
-# 5. MOTOR DE CÁLCULO DIARIO (Reutilización exacta de app.py)
+# 5. MOTOR DE CÁLCULO DIARIO
 # ============================================================
 def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
     dia_semana = DIAS_SEMANA[fecha_sel.weekday()]
     fecha_str = fecha_sel.strftime("%d/%m/%Y")
 
-    # Viajes fijos del día
     if df_cron.empty:
         fijos = pd.DataFrame()
     else:
@@ -284,7 +283,6 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
         c["_d"] = c["Día_Semana"].astype(str).str.strip().str.lower()
         fijos = c[c["_d"] == dia_semana.lower()].drop(columns=["_d"])
 
-    # Excepciones del día
     cancel_ids, agregados = set(), pd.DataFrame()
     if not df_exc.empty:
         ex = df_exc.copy()
@@ -299,7 +297,6 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
     if not fijos.empty and cancel_ids:
         fijos = fijos[~fijos["ID_Paciente"].astype(str).str.strip().isin(cancel_ids)]
 
-    # Unificar
     registros = []
     for _, r in fijos.iterrows():
         registros.append({
@@ -324,7 +321,6 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
 
     df = pd.DataFrame(registros)
 
-    # Enriquecer con datos del paciente
     if not df_pac.empty:
         p = df_pac.copy()
         p["_id"] = p["ID_Paciente"].astype(str).str.strip()
@@ -338,7 +334,6 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
     df["Observaciones"] = ""
     df["Hora"] = ""
 
-    # Cruzar con asistencia diaria
     if not df_asis.empty:
         a = df_asis.copy()
         a["_f"] = a["Fecha_Servicio"].astype(str).str.strip()
@@ -360,12 +355,11 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
 
     return df[cols].sort_values(["Móvil", "Turno", "Nombre"]).reset_index(drop=True)
 
-
 # Calcular el universo operativo de hoy
 df_hoy = calcular_universo_diario(hoy_arg, df_cron, df_exc, df_pac, df_asis)
 
 # ============================================================
-# 6. HEADER DEL MONITOR (Elegante y Limpio)
+# 6. HEADER DEL MONITOR (FAUJIDA)
 # ============================================================
 fecha_label = f"{hoy_arg.strftime('%d/%m/%Y')} — {DIAS_SEMANA[hoy_arg.weekday()]}"
 actualizado_label = ahora_arg.strftime("%H:%M:%S")
@@ -374,11 +368,11 @@ st.markdown(
     f"""
     <div class="monitor-header">
         <div class="monitor-title">
-            <span>🏥</span> DIL-Salud — Monitor de Recepción
+            <span>🏥</span> FAUJIDA — Monitor de Recepción
         </div>
         <div class="monitor-timeinfo">
             <div class="timeinfo-date">{fecha_label}</div>
-            <div class="timeinfo-refresh">Actualizado hace instantes: {actualizado_label}</div>
+            <div class="timeinfo-refresh">Actualizado: {actualizado_label}</div>
         </div>
     </div>
     """,
@@ -386,25 +380,21 @@ st.markdown(
 )
 
 # ============================================================
-# 7. MAQUETADO DE PESTAÑAS Y GRILLA DE AEROPUERTO
+# 7. MAQUETADO DE GRILLA DE AEROPUERTO (Vista Unificada)
 # ============================================================
-tabs = st.tabs(["Turno 1", "Turno 2", "Turno 3"])
-
-for i, turno_name in enumerate(["Turno 1", "Turno 2", "Turno 3"]):
-    with tabs[i]:
-        # Filtrar datos por turno
-        df_turno = df_hoy[df_hoy["Turno"] == turno_name] if not df_hoy.empty else pd.DataFrame()
-        
-        col_presente, col_ausente, col_pendiente = st.columns(3)
-        
-        # 1. EN CAMINO (Presente)
-        with col_presente:
-            st.markdown('<div class="tv-col-header green">🟢 EN CAMINO</div>', unsafe_allow_html=True)
-            df_pres = df_turno[df_turno["Asistencia"] == "Presente"] if not df_turno.empty else pd.DataFrame()
-            if df_pres.empty:
-                st.markdown("<p style='text-align:center; color:#64748b; font-size:18px; margin-top:20px;'>Sin pacientes en camino</p>", unsafe_allow_html=True)
-            else:
-                for _, r in df_pres.iterrows():
+if df_hoy.empty:
+    st.info("No hay traslados programados para el día de hoy.")
+else:
+    col_presente, col_ausente, col_pendiente = st.columns(3)
+    
+    # 1. EN CAMINO (Presente)
+    with col_presente:
+        st.markdown('<div class="tv-col-header green">🟢 EN CAMINO</div>', unsafe_allow_html=True)
+        for turno_name in ["Turno 1", "Turno 2", "Turno 3"]:
+            df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Presente")]
+            if not df_t.empty:
+                st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
+                for _, r in df_t.iterrows():
                     nombre = r["Nombre"]
                     movil = r["Móvil"]
                     hora = f" ({r['Hora']})" if r["Hora"] else ""
@@ -420,18 +410,18 @@ for i, turno_name in enumerate(["Turno 1", "Turno 2", "Turno 3"]):
                         """,
                         unsafe_allow_html=True
                     )
-                    
-        # 2. NO ASISTE (Ausente)
-        with col_ausente:
-            st.markdown('<div class="tv-col-header red">🔴 NO ASISTE</div>', unsafe_allow_html=True)
-            df_aus = df_turno[df_turno["Asistencia"] == "Ausente"] if not df_turno.empty else pd.DataFrame()
-            if df_aus.empty:
-                st.markdown("<p style='text-align:center; color:#64748b; font-size:18px; margin-top:20px;'>Sin pacientes ausentes</p>", unsafe_allow_html=True)
-            else:
-                for _, r in df_aus.iterrows():
+                
+    # 2. NO ASISTE (Ausente)
+    with col_ausente:
+        st.markdown('<div class="tv-col-header red">🔴 NO ASISTE</div>', unsafe_allow_html=True)
+        for turno_name in ["Turno 1", "Turno 2", "Turno 3"]:
+            df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Ausente")]
+            if not df_t.empty:
+                st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
+                for _, r in df_t.iterrows():
                     nombre = r["Nombre"]
                     movil = r["Móvil"]
-                    obs = f" - {r['Observaciones']}" if r["Observaciones"] else ""
+                    obs = f" — {r['Observaciones']}" if r["Observaciones"] else ""
                     st.markdown(
                         f"""
                         <div class="tv-card red">
@@ -444,15 +434,15 @@ for i, turno_name in enumerate(["Turno 1", "Turno 2", "Turno 3"]):
                         """,
                         unsafe_allow_html=True
                     )
-                    
-        # 3. EN ESPERA (Pendiente)
-        with col_pendiente:
-            st.markdown('<div class="tv-col-header grey">🟡 EN ESPERA</div>', unsafe_allow_html=True)
-            df_pend = df_turno[df_turno["Asistencia"] == "Pendiente"] if not df_turno.empty else pd.DataFrame()
-            if df_pend.empty:
-                st.markdown("<p style='text-align:center; color:#64748b; font-size:18px; margin-top:20px;'>Sin viajes en espera</p>", unsafe_allow_html=True)
-            else:
-                for _, r in df_pend.iterrows():
+                
+    # 3. EN ESPERA (Pendiente)
+    with col_pendiente:
+        st.markdown('<div class="tv-col-header grey">🟡 EN ESPERA</div>', unsafe_allow_html=True)
+        for turno_name in ["Turno 1", "Turno 2", "Turno 3"]:
+            df_t = df_hoy[(df_hoy["Turno"] == turno_name) & (df_hoy["Asistencia"] == "Pendiente")]
+            if not df_t.empty:
+                st.markdown(f'<div class="turno-sub-header">{turno_name.upper()}</div>', unsafe_allow_html=True)
+                for _, r in df_t.iterrows():
                     nombre = r["Nombre"]
                     movil = r["Móvil"]
                     destino = r["Destino"]
@@ -468,3 +458,15 @@ for i, turno_name in enumerate(["Turno 1", "Turno 2", "Turno 3"]):
                         """,
                         unsafe_allow_html=True
                     )
+
+# ============================================================
+# 8. FOOTER FIJO EN PANTALLA
+# ============================================================
+st.markdown(
+    """
+    <div class="tv-footer">
+        Desarrollado por <b>DIL Digital</b>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
