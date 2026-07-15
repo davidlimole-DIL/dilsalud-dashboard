@@ -1,8 +1,9 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v7
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v8
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
+# Nombres con soporte multilinea (hasta 2 renglones) y auto-ajuste de altura.
 # ============================================================
 
 import os
@@ -245,9 +246,10 @@ E_max = max(
 C_total = C_p + C_a + C_e
 
 # ============================================================
-# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE
+# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE (Con margen para saltos de línea)
 # ============================================================
-target_height = 680
+# Usamos target_height un poco más bajo (610px) para compensar el espacio que ocupan los nombres de 2 renglones
+target_height = 610
 safe_emax = max(1, E_max)
 
 # Altura proporcional teórica para cada elemento
@@ -274,7 +276,7 @@ col_header_font_size = min(22, max(14, int(F * 1.1)))
 turno_header_font_size = min(15, max(10, int(F * 0.85)))
 
 # ============================================================
-# 6. ESTILOS CSS DINÁMICOS (Escapando correctamente las llaves)
+# 6. ESTILOS CSS DINÁMICOS
 # ============================================================
 st.markdown(f"""
 <style>
@@ -406,15 +408,20 @@ st.markdown(f"""
         border-left-color: #f59e0b;
     }}
     
+    /* Soporte para 2 renglones con puntos suspensivos adaptativos si excede los 2 renglones */
     .tv-patient-name {{
         font-size: {F}px;
         font-weight: 700;
         color: #ffffff;
         margin: 0;
-        line-height: 1.1;
-        white-space: nowrap;
+        line-height: 1.2;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: normal;
+        word-break: break-word;
     }}
 
     .tv-footer {{
@@ -451,7 +458,7 @@ st.markdown(
 )
 
 # ============================================================
-# 8. MAQUETADO DE GRILLA ADAPTATIVA (CSS Column-Count para máximo ancho horizontal)
+# 8. MAQUETADO DE GRILLA ADAPTATIVA
 # ============================================================
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
