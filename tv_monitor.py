@@ -397,7 +397,7 @@ st.markdown(f"""
         border-left: 3px solid #a855f7; /* Púrpura */
     }}
     .turno-sub-header.turno-3 {{
-        border-left: 3px solid #ec4899; /* Rosa Fucsia */
+        border-left: 3px solid #f97316; /* Naranja */
     }}
 
     .tv-card {{
@@ -419,7 +419,7 @@ st.markdown(f"""
         border-left-color: #a855f7 !important; /* Púrpura */
     }}
     .tv-card.turno-3 {{
-        border-left-color: #ec4899 !important; /* Rosa Fucsia */
+        border-left-color: #f97316 !important; /* Naranja */
     }}
     
     .tv-patient-name {{
