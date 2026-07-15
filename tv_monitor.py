@@ -1,9 +1,9 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v8
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v9
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
-# Nombres con soporte multilinea (hasta 2 renglones) y auto-ajuste de altura.
+# Color de borde de tarjeta según el Turno (Celeste, Púrpura, Rosa).
 # ============================================================
 
 import os
@@ -212,27 +212,29 @@ for turno in ["Turno 1", "Turno 2", "Turno 3"]:
     pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Presente")] if not df_hoy.empty else pd.DataFrame()
     if not pacs.empty:
         items_p.append({"type": "header", "text": turno.upper()})
+        t_cls = "turno-" + turno.split(" ")[1]
         for _, r in pacs.iterrows():
-            items_p.append({"type": "patient", "name": r["Nombre"], "state": "green"})
+            items_p.append({"type": "patient", "name": r["Nombre"], "turno_class": t_cls})
 
 items_a = []
 for turno in ["Turno 1", "Turno 2", "Turno 3"]:
     pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Ausente")] if not df_hoy.empty else pd.DataFrame()
     if not pacs.empty:
         items_a.append({"type": "header", "text": turno.upper()})
+        t_cls = "turno-" + turno.split(" ")[1]
         for _, r in pacs.iterrows():
-            items_a.append({"type": "patient", "name": r["Nombre"], "state": "red"})
+            items_a.append({"type": "patient", "name": r["Nombre"], "turno_class": t_cls})
 
 items_e = []
 for turno in ["Turno 1", "Turno 2", "Turno 3"]:
     pacs = df_hoy[(df_hoy["Turno"] == turno) & (df_hoy["Asistencia"] == "Pendiente")] if not df_hoy.empty else pd.DataFrame()
     if not pacs.empty:
         items_e.append({"type": "header", "text": turno.upper()})
+        t_cls = "turno-" + turno.split(" ")[1]
         for _, r in pacs.iterrows():
-            items_e.append({"type": "patient", "name": r["Nombre"], "state": "grey"})
+            items_e.append({"type": "patient", "name": r["Nombre"], "turno_class": t_cls})
 
 # Determinar cantidad óptima de subcolumnas (C_p, C_a, C_e) dinámicamente
-# Con un objetivo de altura de aproximadamente 8 filas por columna
 C_p = max(1, math.ceil(len(items_p) / 8)) if items_p else 1
 C_a = max(1, math.ceil(len(items_a) / 8)) if items_a else 1
 C_e = max(1, math.ceil(len(items_e) / 8)) if items_e else 1
@@ -246,9 +248,8 @@ E_max = max(
 C_total = C_p + C_a + C_e
 
 # ============================================================
-# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE (Con margen para saltos de línea)
+# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE
 # ============================================================
-# Usamos target_height un poco más bajo (610px) para compensar el espacio que ocupan los nombres de 2 renglones
 target_height = 610
 safe_emax = max(1, E_max)
 
@@ -271,7 +272,7 @@ elif C_total >= 9 and F > 11:
     P = max(2, P - 2)
     M = max(2, M - 2)
 
-# Capping de fuentes para cabeceras y turnos para evitar tamaños grotescos
+# Capping de fuentes para cabeceras y turnos
 col_header_font_size = min(22, max(14, int(F * 1.1)))
 turno_header_font_size = min(15, max(10, int(F * 0.85)))
 
@@ -387,6 +388,17 @@ st.markdown(f"""
         width: fit-content;
         letter-spacing: 0.5px;
     }}
+    
+    /* Indicador de color del Turno a la izquierda de la subcabecera */
+    .turno-sub-header.turno-1 {{
+        border-left: 3px solid #0ea5e9; /* Celeste */
+    }}
+    .turno-sub-header.turno-2 {{
+        border-left: 3px solid #a855f7; /* Púrpura */
+    }}
+    .turno-sub-header.turno-3 {{
+        border-left: 3px solid #ec4899; /* Rosa Fucsia */
+    }}
 
     .tv-card {{
         break-inside: avoid;
@@ -395,20 +407,21 @@ st.markdown(f"""
         padding: {P}px {P + 4}px;
         margin-bottom: {M}px;
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        border-left: {max(2, F // 4)}px solid #64748b;
+        border-left: {max(3, F // 3)}px solid #64748b;
         display: block;
     }}
-    .tv-card.green {{
-        border-left-color: #10b981;
+    
+    /* Indicadores de color del Turno en el borde izquierdo de las tarjetas (No semáforo) */
+    .tv-card.turno-1 {{
+        border-left-color: #0ea5e9 !important; /* Celeste */
     }}
-    .tv-card.red {{
-        border-left-color: #ef4444;
+    .tv-card.turno-2 {{
+        border-left-color: #a855f7 !important; /* Púrpura */
     }}
-    .tv-card.grey {{
-        border-left-color: #f59e0b;
+    .tv-card.turno-3 {{
+        border-left-color: #ec4899 !important; /* Rosa Fucsia */
     }}
     
-    /* Soporte para 2 renglones con puntos suspensivos adaptativos si excede los 2 renglones */
     .tv-patient-name {{
         font-size: {F}px;
         font-weight: 700;
@@ -473,9 +486,10 @@ else:
             html_p = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_p};">'
             for item in items_p:
                 if item["type"] == "header":
-                    html_p += f'<div class="turno-sub-header">{item["text"]}</div>'
+                    t_num = item["text"].split(" ")[1]
+                    html_p += f'<div class="turno-sub-header turno-{t_num}">{item["text"]}</div>'
                 else:
-                    html_p += f'<div class="tv-card green"><p class="tv-patient-name">{item["name"]}</p></div>'
+                    html_p += f'<div class="tv-card {item["turno_class"]}"><p class="tv-patient-name">{item["name"]}</p></div>'
             html_p += '</div>'
             st.markdown(html_p, unsafe_allow_html=True)
                 
@@ -486,9 +500,10 @@ else:
             html_a = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_a};">'
             for item in items_a:
                 if item["type"] == "header":
-                    html_a += f'<div class="turno-sub-header">{item["text"]}</div>'
+                    t_num = item["text"].split(" ")[1]
+                    html_a += f'<div class="turno-sub-header turno-{t_num}">{item["text"]}</div>'
                 else:
-                    html_a += f'<div class="tv-card red"><p class="tv-patient-name">{item["name"]}</p></div>'
+                    html_a += f'<div class="tv-card {item["turno_class"]}"><p class="tv-patient-name">{item["name"]}</p></div>'
             html_a += '</div>'
             st.markdown(html_a, unsafe_allow_html=True)
                 
@@ -499,9 +514,10 @@ else:
             html_e = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_e};">'
             for item in items_e:
                 if item["type"] == "header":
-                    html_e += f'<div class="turno-sub-header">{item["text"]}</div>'
+                    t_num = item["text"].split(" ")[1]
+                    html_e += f'<div class="turno-sub-header turno-{t_num}">{item["text"]}</div>'
                 else:
-                    html_e += f'<div class="tv-card grey"><p class="tv-patient-name">{item["name"]}</p></div>'
+                    html_e += f'<div class="tv-card {item["turno_class"]}"><p class="tv-patient-name">{item["name"]}</p></div>'
             html_e += '</div>'
             st.markdown(html_e, unsafe_allow_html=True)
 
