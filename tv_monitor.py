@@ -601,25 +601,13 @@ else:
             st.markdown(html_e, unsafe_allow_html=True)
 
 # ============================================================
-# 11. FOOTER FIJO EN PANTALLA A LA IZQUIERDA Y CONTROL DE PRUEBAS
+# 11. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
 # ============================================================
-# Creamos columnas para el pie de página: izquierda créditos, derecha botón de simulación
-col_f_left, col_f_right = st.columns([4, 1])
-
-with col_f_left:
-    st.markdown(
-        """
-        <div class="tv-footer" style="position: static; padding-top: 15px;">
-            Desarrollado por <b>DIL Digital</b>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-with col_f_right:
-    # Botón de prueba temporal. Cuando el usuario lo presione, activará/desactivará el overlay
-    label_btn = "🛑 Detener Prueba Logo" if st.session_state.get("simular_loading", False) else "🧪 Probar Logo Carga"
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    if st.button(label_btn, key="btn_simular_logo", use_container_width=True):
-        st.session_state.simular_loading = not st.session_state.get("simular_loading", False)
-        st.rerun()
+st.markdown(
+    """
+    <div class="tv-footer">
+        Desarrollado por <b>DIL Digital</b>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
