@@ -1,9 +1,9 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v9
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v10
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
-# Color de borde de tarjeta según el Turno (Celeste, Púrpura, Rosa).
+# Escalado basado en Viewport Height (vh) para soporte multi-pantalla sin cortes.
 # ============================================================
 
 import os
@@ -248,36 +248,41 @@ E_max = max(
 C_total = C_p + C_a + C_e
 
 # ============================================================
-# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE
+# 5. CÁLCULO MATEMÁTICO EN VIEWPORT HEIGHT (vh)
 # ============================================================
-target_height = 610
+# Porcentaje de la ventana del navegador que queremos que ocupe la grilla de datos
+# Usamos 64% para dar margen de seguridad al título, encabezados y firma.
+usable_vh = 64.0
 safe_emax = max(1, E_max)
 
-# Altura proporcional teórica para cada elemento
-item_height = target_height / safe_emax
-item_height = min(75.0, max(22.0, item_height))
+# Alto en vh asignado a cada elemento en base a E_max
+vh_per_item = usable_vh / safe_emax
+vh_per_item = min(7.5, max(2.2, vh_per_item))
 
-# Proporciones adaptativas basadas en la altura calculada
-F = max(11, int(item_height * 0.44))  # Tamaño de fuente (mínimo 11px)
-P = max(2, int(item_height * 0.16))   # Relleno vertical (mínimo 2px)
-M = max(2, int(item_height * 0.14))   # Separación inferior (mínimo 2px)
+# Proporciones dinámicas en vh
+F_vh = vh_per_item * 0.44  # Fuente del nombre
+P_vh = vh_per_item * 0.16  # Padding vertical
+M_vh = vh_per_item * 0.14  # Margen inferior
 
-# Ajuste por ancho horizontal (si hay muchas subcolumnas, reducimos un poco la fuente)
-if C_total >= 7 and F > 13:
-    F = max(13, F - 2)
-    P = max(2, P - 1)
-    M = max(2, M - 1)
-elif C_total >= 9 and F > 11:
-    F = max(11, F - 4)
-    P = max(2, P - 2)
-    M = max(2, M - 2)
+# Ajuste si hay demasiadas columnas
+if C_total >= 7 and F_vh > 1.8:
+    F_vh = max(1.4, F_vh - 0.2)
+    P_vh = max(0.3, P_vh - 0.1)
+    M_vh = max(0.3, M_vh - 0.1)
+elif C_total >= 9 and F_vh > 1.4:
+    F_vh = max(1.1, F_vh - 0.4)
+    P_vh = max(0.2, P_vh - 0.2)
+    M_vh = max(0.2, M_vh - 0.2)
+
+# Grosor del borde en píxeles (basado en el tamaño relativo)
+border_width_px = max(3, int(F_vh * 3))
 
 # Capping de fuentes para cabeceras y turnos
-col_header_font_size = min(22, max(14, int(F * 1.1)))
-turno_header_font_size = min(15, max(10, int(F * 0.85)))
+col_header_font_size = min(2.5, max(1.4, F_vh * 1.1))
+turno_header_font_size = min(1.8, max(1.0, F_vh * 0.85))
 
 # ============================================================
-# 6. ESTILOS CSS DINÁMICOS
+# 6. ESTILOS CSS DINÁMICOS (Escala basada en vh)
 # ============================================================
 st.markdown(f"""
 <style>
@@ -287,6 +292,7 @@ st.markdown(f"""
         font-family: 'Plus Jakarta Sans', sans-serif;
         background-color: #0f172a;
         color: #f8fafc;
+        overflow: hidden; /* Evita scroll en pantallas estrictas */
     }}
 
     #MainMenu {{visibility: hidden;}}
@@ -314,30 +320,30 @@ st.markdown(f"""
         justify-content: space-between;
         align-items: center;
         border-bottom: 2px solid #1e293b;
-        padding-bottom: 4px;
-        margin-bottom: 8px;
+        padding-bottom: 0.4vh;
+        margin-bottom: 0.8vh;
         margin-top: 0px;
     }}
     .monitor-title {{
-        font-size: 21px;
+        font-size: 2.5vh;
         font-weight: 800;
         color: #38bdf8;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.8vw;
         margin: 0;
     }}
     .monitor-timeinfo {{
         text-align: right;
     }}
     .timeinfo-date {{
-        font-size: 13px;
+        font-size: 1.6vh;
         font-weight: 700;
         color: #f1f5f9;
         margin: 0;
     }}
     .timeinfo-refresh {{
-        font-size: 10px;
+        font-size: 1.2vh;
         color: #64748b;
         margin: 0;
         font-weight: 600;
@@ -345,11 +351,11 @@ st.markdown(f"""
 
     .tv-col-header {{
         text-align: center;
-        font-size: {col_header_font_size}px;
+        font-size: {col_header_font_size}vh;
         font-weight: 800;
-        padding: 4px;
+        padding: 0.5vh;
         border-radius: 5px;
-        margin-bottom: 6px;
+        margin-bottom: 0.8vh;
         text-transform: uppercase;
         letter-spacing: 0.8px;
     }}
@@ -376,54 +382,53 @@ st.markdown(f"""
     .turno-sub-header {{
         break-inside: avoid;
         display: block;
-        font-size: {turno_header_font_size}px;
+        font-size: {turno_header_font_size}vh;
         font-weight: 800;
         color: #94a3b8;
         background-color: #1e293b;
-        padding: 1px 6px;
+        padding: 0.2vh 0.8vh;
         border-radius: 10px;
-        margin-top: {M - 1 if M > 1 else 1}px;
-        margin-bottom: {M - 1 if M > 1 else 1}px;
+        margin-top: {M_vh * 0.8}vh;
+        margin-bottom: {M_vh * 0.8}vh;
         border: 1px solid #334155;
         width: fit-content;
         letter-spacing: 0.5px;
     }}
     
-    /* Indicador de color del Turno a la izquierda de la subcabecera */
     .turno-sub-header.turno-1 {{
-        border-left: 3px solid #0ea5e9; /* Celeste */
+        border-left: 3px solid #0ea5e9;
     }}
     .turno-sub-header.turno-2 {{
-        border-left: 3px solid #a855f7; /* Púrpura */
+        border-left: 3px solid #a855f7;
     }}
     .turno-sub-header.turno-3 {{
-        border-left: 3px solid #f97316; /* Naranja */
+        border-left: 3px solid #f97316;
     }}
 
     .tv-card {{
         break-inside: avoid;
         background-color: #1e293b;
         border-radius: 5px;
-        padding: {P}px {P + 4}px;
-        margin-bottom: {M}px;
+        padding: {P_vh}vh {P_vh * 1.2}vh;
+        margin-bottom: {M_vh}vh;
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        border-left: {max(3, F // 3)}px solid #64748b;
+        border-left: {border_width_px}px solid #64748b;
         display: block;
     }}
     
-    /* Indicadores de color del Turno en el borde izquierdo de las tarjetas (No semáforo) */
     .tv-card.turno-1 {{
-        border-left-color: #0ea5e9 !important; /* Celeste */
+        border-left-color: #0ea5e9 !important;
     }}
     .tv-card.turno-2 {{
-        border-left-color: #a855f7 !important; /* Púrpura */
+        border-left-color: #a855f7 !important;
     }}
     .tv-card.turno-3 {{
-        border-left-color: #f97316 !important; /* Naranja */
+        border-left-color: #f97316 !important;
     }}
     
+    /* Soporte multilineal (2 renglones) escalado en vh */
     .tv-patient-name {{
-        font-size: {F}px;
+        font-size: {F_vh}vh;
         font-weight: 700;
         color: #ffffff;
         margin: 0;
@@ -441,7 +446,7 @@ st.markdown(f"""
         position: fixed;
         bottom: 8px;
         left: 16px;
-        font-size: 11px;
+        font-size: 1.3vh;
         color: #64748b;
         font-weight: 700;
         z-index: 999;
@@ -476,7 +481,6 @@ st.markdown(
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
 else:
-    # Definimos columnas generales asignando anchos proporcionales a sus subcolumnas
     col_presente, col_ausente, col_pendiente = st.columns([C_p, C_a, C_e])
     
     # 1. EN CAMINO (Presente)
