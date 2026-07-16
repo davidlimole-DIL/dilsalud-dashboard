@@ -532,6 +532,9 @@ if logo_dil_b64:
 # ============================================================
 # 9. HEADER DEL MONITOR
 # ============================================================
+fecha_label = f"{hoy_arg.strftime('%d/%m/%Y')} — {DIAS_SEMANA[hoy_arg.weekday()]}"
+actualizado_label = ahora_arg.strftime("%H:%M:%S")
+
 st.markdown(
     f"""
     <div class="monitor-header">
