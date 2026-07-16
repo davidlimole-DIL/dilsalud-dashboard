@@ -1,9 +1,9 @@
 # ============================================================
-# DIL-Salud — Monitor de Cartelería Digital para Smart TV v10
+# DIL-Salud — Monitor de Cartelería Digital para Smart TV v11
 # ============================================================
 # Interfaz diseñada para proyectarse de forma estática en Smart TV o Chromecast.
 # Cero interacción, autorefresco de 5 minutos. Layout inteligente y adaptativo.
-# Escalado basado en Viewport Height (vh) para soporte multi-pantalla sin cortes.
+# Escalado en vh con overlay de logo pulsante durante la carga de datos.
 # ============================================================
 
 import os
@@ -248,23 +248,22 @@ E_max = max(
 C_total = C_p + C_a + C_e
 
 # ============================================================
-# 5. CÁLCULO MATEMÁTICO EN VIEWPORT HEIGHT (vh)
+# 5. CÁLCULO MATEMÁTICO ADAPTATIVO DE ALTURA Y FUENTE
 # ============================================================
-# Porcentaje de la ventana del navegador que queremos que ocupe la grilla de datos
-# Usamos 64% para dar margen de seguridad al título, encabezados y firma.
-usable_vh = 64.0
+target_height = 610
 safe_emax = max(1, E_max)
 
-# Alto en vh asignado a cada elemento en base a E_max
+item_height = target_height / safe_emax
+item_height = min(75.0, max(22.0, item_height))
+
+F_vh = vh_per_item = usable_vh = 64.0
 vh_per_item = usable_vh / safe_emax
 vh_per_item = min(7.5, max(2.2, vh_per_item))
 
-# Proporciones dinámicas en vh
-F_vh = vh_per_item * 0.44  # Fuente del nombre
-P_vh = vh_per_item * 0.16  # Padding vertical
-M_vh = vh_per_item * 0.14  # Margen inferior
+F_vh = vh_per_item * 0.44
+P_vh = vh_per_item * 0.16
+M_vh = vh_per_item * 0.14
 
-# Ajuste si hay demasiadas columnas
 if C_total >= 7 and F_vh > 1.8:
     F_vh = max(1.4, F_vh - 0.2)
     P_vh = max(0.3, P_vh - 0.1)
@@ -274,15 +273,40 @@ elif C_total >= 9 and F_vh > 1.4:
     P_vh = max(0.2, P_vh - 0.2)
     M_vh = max(0.2, M_vh - 0.2)
 
-# Grosor del borde en píxeles (basado en el tamaño relativo)
 border_width_px = max(3, int(F_vh * 3))
-
-# Capping de fuentes para cabeceras y turnos
 col_header_font_size = min(2.5, max(1.4, F_vh * 1.1))
 turno_header_font_size = min(1.8, max(1.0, F_vh * 0.85))
 
 # ============================================================
-# 6. ESTILOS CSS DINÁMICOS (Escala basada en vh)
+# 6. ENCODING DE LOGO DE ACTUALIZACIÓN (gspread loading)
+# ============================================================
+def get_base64_logo_tv(filename):
+    """Carga el logo desde la carpeta actual o el directorio superior."""
+    paths = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), filename),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), filename)
+    ]
+    for p in paths:
+        if os.path.exists(p):
+            with open(p, "rb") as f:
+                return base64.b64encode(f.read()).decode("utf-8")
+    return ""
+
+logo_dil_b64 = get_base64_logo_tv("logoDIL-Salud.png")
+
+# CSS para forzar simulación de carga si está activo el botón de prueba
+simular_force_css = ""
+if st.session_state.get("simular_loading", False):
+    simular_force_css = """
+    .loading-logo-overlay {
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    """
+
+# ============================================================
+# 7. ESTILOS CSS
 # ============================================================
 st.markdown(f"""
 <style>
@@ -292,7 +316,7 @@ st.markdown(f"""
         font-family: 'Plus Jakarta Sans', sans-serif;
         background-color: #0f172a;
         color: #f8fafc;
-        overflow: hidden; /* Evita scroll en pantallas estrictas */
+        overflow: hidden;
     }}
 
     #MainMenu {{visibility: hidden;}}
@@ -344,7 +368,7 @@ st.markdown(f"""
     }}
     .timeinfo-refresh {{
         font-size: 1.6vh;
-        color: #38bdf8; /* Celeste de alta visibilidad */
+        color: #38bdf8;
         margin: 2px 0 0 0;
         font-weight: 800;
     }}
@@ -426,7 +450,6 @@ st.markdown(f"""
         border-left-color: #f97316 !important;
     }}
     
-    /* Soporte multilineal (2 renglones) escalado en vh */
     .tv-patient-name {{
         font-size: {F_vh}vh;
         font-weight: 700;
@@ -451,15 +474,64 @@ st.markdown(f"""
         font-weight: 700;
         z-index: 999;
     }}
+
+    /* CSS para el overlay de carga con el logo */
+    .loading-logo-overlay {{
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(15, 23, 42, 0.85); /* Fondo oscuro traslúcido */
+        backdrop-filter: blur(8px); /* Efecto blur del fondo */
+        z-index: 999999;
+        justify-content: center;
+        align-items: center;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }}
+
+    @keyframes pulse {{
+        0% {{ transform: scale(0.96); opacity: 0.8; }}
+        50% {{ transform: scale(1.02); opacity: 1; }}
+        100% {{ transform: scale(0.96); opacity: 0.8; }}
+    }}
+
+    .loading-logo-img {{
+        max-width: 320px;
+        max-height: 160px;
+        object-fit: contain;
+        animation: pulse 2s infinite ease-in-out;
+    }}
+
+    /* Se activa por CSS puro cuando el spinner/status-widget de Streamlit está corriendo en el DOM */
+    body:has([data-testid="stStatusWidget"]) .loading-logo-overlay {{
+        display: flex !important;
+        opacity: 1 !important;
+    }}
+
+    {simular_force_css}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 7. HEADER DEL MONITOR
+# 8. OVERLAY DE CARGA (Con logo en base64)
 # ============================================================
-fecha_label = f"{hoy_arg.strftime('%d/%m/%Y')} — {DIAS_SEMANA[hoy_arg.weekday()]}"
-actualizado_label = ahora_arg.strftime("%H:%M:%S")
+if logo_dil_b64:
+    st.markdown(f"""
+    <div class="loading-logo-overlay">
+        <div style="text-align: center;">
+            <img src="data:image/png;base64,{logo_dil_b64}" class="loading-logo-img">
+            <p style="color: #38bdf8; font-size: 2.2vh; font-weight: 800; margin-top: 15px; letter-spacing: 1px; font-family: 'Plus Jakarta Sans', sans-serif;">SINCRONIZANDO MONITOR...</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
+# ============================================================
+# 9. HEADER DEL MONITOR
+# ============================================================
 st.markdown(
     f"""
     <div class="monitor-header">
@@ -476,7 +548,7 @@ st.markdown(
 )
 
 # ============================================================
-# 8. MAQUETADO DE GRILLA ADAPTATIVA
+# 10. MAQUETADO DE GRILLA ADAPTATIVA
 # ============================================================
 if df_hoy.empty:
     st.info("No hay traslados programados para el día de hoy.")
@@ -526,13 +598,25 @@ else:
             st.markdown(html_e, unsafe_allow_html=True)
 
 # ============================================================
-# 9. FOOTER FIJO EN PANTALLA A LA IZQUIERDA
+# 11. FOOTER FIJO EN PANTALLA A LA IZQUIERDA Y CONTROL DE PRUEBAS
 # ============================================================
-st.markdown(
-    """
-    <div class="tv-footer">
-        Desarrollado por <b>DIL Digital</b>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Creamos columnas para el pie de página: izquierda créditos, derecha botón de simulación
+col_f_left, col_f_right = st.columns([4, 1])
+
+with col_f_left:
+    st.markdown(
+        """
+        <div class="tv-footer" style="position: static; padding-top: 15px;">
+            Desarrollado por <b>DIL Digital</b>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with col_f_right:
+    # Botón de prueba temporal. Cuando el usuario lo presione, activará/desactivará el overlay
+    label_btn = "🛑 Detener Prueba Logo" if st.session_state.get("simular_loading", False) else "🧪 Probar Logo Carga"
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    if st.button(label_btn, key="btn_simular_logo", use_container_width=True):
+        st.session_state.simular_loading = not st.session_state.get("simular_loading", False)
+        st.rerun()
