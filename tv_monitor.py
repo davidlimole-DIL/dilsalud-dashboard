@@ -89,9 +89,33 @@ def _cargar_credenciales_oauth():
     )
 
 def cargar_datos_tv_limpios():
-    creds = _cargar_credenciales_oauth()
-    client = gspread.authorize(creds)
-    spreadsheet = client.open_by_url(st.secrets["google_sheets"]["spreadsheet_url"])
+    try:
+        creds = _cargar_credenciales_oauth()
+        print("[DIAGNOSTIC] Credentials loaded from secrets successfully.")
+    except Exception as e:
+        print("[DIAGNOSTIC] Error loading credentials from secrets:", type(e), e)
+        raise e
+
+    try:
+        client = gspread.authorize(creds)
+        print("[DIAGNOSTIC] gspread client authorized successfully.")
+    except Exception as e:
+        print("[DIAGNOSTIC] Error authorizing gspread client:", type(e), e)
+        raise e
+
+    try:
+        url = st.secrets["google_sheets"]["spreadsheet_url"]
+        print("[DIAGNOSTIC] Spreadsheet URL from secrets:", url)
+    except Exception as e:
+        print("[DIAGNOSTIC] Error reading spreadsheet_url from secrets:", type(e), e)
+        raise e
+
+    try:
+        spreadsheet = client.open_by_url(url)
+        print("[DIAGNOSTIC] Google Sheet opened successfully! Title:", spreadsheet.title)
+    except Exception as e:
+        print("[DIAGNOSTIC] Error opening Google Sheet by URL:", type(e), e)
+        raise e
 
     nombres = ["ASISTENCIA_DIARIA", "PACIENTE", "CRONOGRAMA", "EXCEPCIONES"]
     hojas = {}
@@ -107,6 +131,8 @@ def cargar_datos_tv_limpios():
 try:
     hojas = cargar_datos_tv_limpios()
 except Exception as e:
+    import traceback
+    traceback.print_exc()
     st.error(f"❌ Error al conectar con Google Sheets: {e}")
     st.stop()
 
