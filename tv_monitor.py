@@ -61,8 +61,11 @@ _AUTHORIZED_USER = os.path.join(_AUTH_DIR, "authorized_user.json")
 def _cargar_credenciales_oauth():
     try:
         auth_info = dict(st.secrets["oauth_credentials"])
+        token = auth_info.get("token")
+        if not token:
+            token = None
         return OAuthCredentials(
-            token=auth_info.get("token"),
+            token=token,
             refresh_token=auth_info.get("refresh_token"),
             token_uri=auth_info.get("token_uri", "https://oauth2.googleapis.com/token"),
             client_id=auth_info.get("client_id"),
