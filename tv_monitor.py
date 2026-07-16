@@ -337,16 +337,16 @@ st.markdown(f"""
         text-align: right;
     }}
     .timeinfo-date {{
-        font-size: 1.6vh;
-        font-weight: 700;
+        font-size: 2.2vh;
+        font-weight: 800;
         color: #f1f5f9;
         margin: 0;
     }}
     .timeinfo-refresh {{
-        font-size: 1.2vh;
-        color: #64748b;
-        margin: 0;
-        font-weight: 600;
+        font-size: 1.6vh;
+        color: #38bdf8; /* Celeste de alta visibilidad */
+        margin: 2px 0 0 0;
+        font-weight: 800;
     }}
 
     .tv-col-header {{
