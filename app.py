@@ -531,7 +531,7 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
             reg = ah[(ah["_id"] == row["ID_Paciente"]) & (ah["_t"] == row["Turno"])]
             if reg.empty:
                 continue
-            r = reg.iloc[0]
+            r = reg.iloc[-1]
             estado = str(r.get("Estado", "")).strip().upper()
             df.at[idx, "Asistencia"] = "Presente" if estado in ("TRUE", "VERDADERO", "1", "SI", "SÍ") else "Ausente"
             df.at[idx, "Observaciones"] = str(r.get("Observaciones", "")).strip()
