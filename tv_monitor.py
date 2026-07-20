@@ -512,8 +512,7 @@ st.markdown(f"""
         left: 0;
         width: 100vw;
         height: 100vh;
-        background-color: rgba(15, 23, 42, 0.85); /* Fondo oscuro traslúcido */
-        backdrop-filter: blur(8px); /* Efecto blur del fondo */
+        background-color: #000000; /* Fondo negro solido opaco */
         z-index: 999999;
         justify-content: center;
         align-items: center;
