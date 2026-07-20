@@ -6,8 +6,9 @@ from selenium.webdriver.common.by import By
 
 def wake_up_apps():
     urls = [
-        "https://dilsalud-dashboard.streamlit.app",
-        "https://dilsalud-tv.streamlit.app"
+        "https://dilsalud.streamlit.app",
+        "https://dilsalud-tv.streamlit.app",
+        "https://dilsalud-dashboard.streamlit.app"
     ]
     
     print("Starting keep-awake script...")
