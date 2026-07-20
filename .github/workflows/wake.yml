@@ -1,0 +1,30 @@
+name: Keep Streamlit Apps Awake
+
+on:
+  schedule:
+    # Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC)
+    # This keeps the app within the 12-hour activity window
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    # Allows manually running this workflow from the GitHub Actions tab
+
+jobs:
+  wake-streamlit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install selenium webdriver-manager
+
+      - name: Run wake up script
+        run: python wake_apps.py
