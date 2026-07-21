@@ -504,21 +504,25 @@ st.markdown(f"""
         z-index: 999;
     }}
 
-    /* CSS para el overlay de carga con el logo */
-    .loading-logo-overlay {{
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: #000000; /* Fondo negro solido opaco */
-        z-index: 999999;
-        justify-content: center;
-        align-items: center;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.3s ease-in-out;
+    /* Estilos para transformar el stStatusWidget nativo de Streamlit en pantalla de carga completa */
+    div[data-testid="stStatusWidget"] {{
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background-color: #000000 !important; /* Fondo negro absoluto */
+        z-index: 999999 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }}
+
+    /* Ocultar elementos por defecto (spinner y texto original) */
+    div[data-testid="stStatusWidget"] > * {{
+        display: none !important;
     }}
 
     @keyframes pulse {{
@@ -527,35 +531,39 @@ st.markdown(f"""
         100% {{ transform: scale(0.96); opacity: 0.8; }}
     }}
 
-    .loading-logo-img {{
-        max-width: 320px;
-        max-height: 160px;
-        object-fit: contain;
-        animation: pulse 2s infinite ease-in-out;
+    /* Inyectar logo DIL-Salud */
+    div[data-testid="stStatusWidget"]::after {{
+        content: "" !important;
+        background-image: url("data:image/png;base64,{logo_dil_b64}") !important;
+        background-size: contain !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        width: 320px !important;
+        height: 160px !important;
+        display: block !important;
+        position: absolute !important;
+        top: calc(50% - 100px) !important;
+        left: calc(50% - 160px) !important;
+        animation: pulse 2s infinite ease-in-out !important;
     }}
 
-    /* Se activa por CSS puro cuando el spinner/status-widget de Streamlit está corriendo en el DOM */
-    body:has([data-testid="stStatusWidget"]) .loading-logo-overlay {{
-        display: flex !important;
-        opacity: 1 !important;
+    /* Inyectar texto de sincronización */
+    div[data-testid="stStatusWidget"]::before {{
+        content: "SINCRONIZANDO MONITOR..." !important;
+        color: #38bdf8 !important;
+        font-size: 2.2vh !important;
+        font-weight: 800 !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        letter-spacing: 1px !important;
+        position: absolute !important;
+        top: calc(50% + 80px) !important;
+        left: 0 !important;
+        width: 100vw !important;
+        text-align: center !important;
+        display: block !important;
     }}
-
-    {simular_force_css}
 </style>
 """, unsafe_allow_html=True)
-
-# ============================================================
-# 8. OVERLAY DE CARGA (Con logo en base64)
-# ============================================================
-if logo_dil_b64:
-    st.markdown(f"""
-    <div class="loading-logo-overlay">
-        <div style="text-align: center;">
-            <img src="data:image/png;base64,{logo_dil_b64}" class="loading-logo-img">
-            <p style="color: #38bdf8; font-size: 2.2vh; font-weight: 800; margin-top: 15px; letter-spacing: 1px; font-family: 'Plus Jakarta Sans', sans-serif;">SINCRONIZANDO MONITOR...</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
 
 # ============================================================
 # 9. HEADER DEL MONITOR
