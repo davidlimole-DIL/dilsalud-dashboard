@@ -594,9 +594,9 @@ if df_hoy.empty:
 else:
     col_presente, col_ausente, col_pendiente = st.columns([C_p, C_a, C_e])
     
-    # 1. EN CAMINO (Presente)
+    # 1. CONFIRMADO (Presente)
     with col_presente:
-        st.markdown('<div class="tv-col-header green">🟢 EN CAMINO</div>', unsafe_allow_html=True)
+        st.markdown('<div class="tv-col-header green">🟢 CONFIRMADO</div>', unsafe_allow_html=True)
         if items_p:
             html_p = f'<div class="tv-subcolumns-wrapper" style="column-count: {C_p};">'
             for item in items_p:
