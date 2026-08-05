@@ -301,23 +301,25 @@ _AUTHORIZED_USER = os.path.join(_AUTH_DIR, "authorized_user.json")
 def _cargar_credenciales_oauth():
     """Carga OAuth2 desde st.secrets (Cloud) o archivo local."""
     try:
-        auth_info = dict(st.secrets["oauth_credentials"])
-        token = auth_info.get("token")
-        if not token:
-            token = None
-        return OAuthCredentials(
-            token=token,
-            refresh_token=auth_info.get("refresh_token"),
-            token_uri=auth_info.get("token_uri", "https://oauth2.googleapis.com/token"),
-            client_id=auth_info.get("client_id"),
-            client_secret=auth_info.get("client_secret"),
-            scopes=SCOPES,
-        )
-    except (KeyError, FileNotFoundError):
+        if "oauth_credentials" in st.secrets:
+            auth_info = dict(st.secrets["oauth_credentials"])
+            token = auth_info.get("token")
+            if not token:
+                token = None
+            return OAuthCredentials(
+                token=token,
+                refresh_token=auth_info.get("refresh_token"),
+                token_uri=auth_info.get("token_uri", "https://oauth2.googleapis.com/token"),
+                client_id=auth_info.get("client_id"),
+                client_secret=auth_info.get("client_secret"),
+                scopes=SCOPES,
+            )
+    except Exception:
         pass
 
     if not os.path.exists(_AUTHORIZED_USER):
-        st.error("❌ Ejecutá primero: **`python setup_auth.py`**")
+        st.error("❌ **Error de Autenticación**: No se encontraron las credenciales de Google OAuth en los Secrets de Streamlit Cloud ni en `.streamlit/authorized_user.json`.")
+        st.info("💡 **Solución para Streamlit Cloud**: Agregá el bloque `[oauth_credentials]` en la sección **App Settings -> Secrets** de Streamlit Community Cloud.")
         st.stop()
 
     with open(_AUTHORIZED_USER, "r") as f:
@@ -356,8 +358,11 @@ def get_base64_logo(filename):
 # ============================================================
 def verificar_acceso():
     try:
-        password_correcta = st.secrets["app_auth"]["password"]
-    except (KeyError, FileNotFoundError):
+        if "app_auth" in st.secrets and "password" in st.secrets["app_auth"]:
+            password_correcta = st.secrets["app_auth"]["password"]
+        else:
+            return
+    except Exception:
         return
 
     if st.session_state.get("autenticado"):
@@ -423,7 +428,10 @@ verificar_acceso()
 @st.cache_data(ttl=300, show_spinner="Sincronizando con Google Sheets…")
 def cargar_datos():
     client = _get_client()
-    spreadsheet = client.open_by_url(st.secrets["google_sheets"]["spreadsheet_url"])
+    url = st.secrets.get("google_sheets", {}).get("spreadsheet_url") if hasattr(st, "secrets") and "google_sheets" in st.secrets else None
+    if not url:
+        url = "https://docs.google.com/spreadsheets/d/14H0u_XpkWYw7NWaHgv6lGOjTkhG5WC-dTlHgk7SQwTs/edit"
+    spreadsheet = client.open_by_url(url)
 
     nombres = ["ASISTENCIA_DIARIA", "PACIENTE", "CRONOGRAMA", "EXCEPCIONES", "USUARIOS"]
     hojas = {}
@@ -440,6 +448,7 @@ try:
     hojas = cargar_datos()
 except Exception as e:
     st.error(f"❌ Error de conexión: `{e}`")
+    st.info("💡 Si el error indica `invalid_grant` o token expirado, debés volver a autenticarte con `python setup_auth.py` y copiar el contenido de `.streamlit/authorized_user.json` en los **Secrets** de Streamlit Community Cloud.")
     st.stop()
 
 df_cronograma = hojas["CRONOGRAMA"]

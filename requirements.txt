@@ -1,7 +1,7 @@
-streamlit>=1.36.0
+streamlit>=1.41.0
+starlette<0.40.0
 pandas>=2.0.0
 gspread>=6.0.0
 google-auth>=2.29.0
 plotly>=5.22.0
 streamlit-autorefresh>=0.0.1
-
