@@ -461,8 +461,22 @@ df_usuarios = hojas["USUARIOS"]
 # ============================================================
 # 6. MOTOR DE CÁLCULO DIARIO
 # ============================================================
+def _extraer_fecha(val):
+    """Extrae un objeto date desde strings dd/MM/yyyy o yyyy-MM-dd (con o sin hora)."""
+    if not val:
+        return None
+    s = str(val).strip().split(" ")[0]
+    for sep, fmt in [("/", "%d/%m/%Y"), ("-", "%Y-%m-%d"), ("-", "%d-%m-%Y")]:
+        if sep in s:
+            try:
+                return datetime.strptime(s, fmt).date()
+            except ValueError:
+                pass
+    return None
+
+
 def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
-    """Réplica de obtenerPacientesDia del backend GAS."""
+    """Réplica de obtenerPacientesDia del backend GAS, respetando fecha de alta del cronograma."""
     dia_semana = DIAS_SEMANA[fecha_sel.weekday()]
     fecha_str = fecha_sel.strftime("%d/%m/%Y")
 
@@ -473,6 +487,56 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
         c = df_cron.copy()
         c["_d"] = c["Día_Semana"].astype(str).str.strip().str.lower()
         fijos = c[c["_d"] == dia_semana.lower()].drop(columns=["_d"])
+
+        # Evitar proyectar hacia atrás pacientes cuyo cronograma se creó después de fecha_sel
+        if not fijos.empty and fecha_sel <= hoy_arg:
+            # Obtener la primera fecha de asistencia histórica de cada paciente (por si se editó su cronograma luego)
+            primera_asis = {}
+            if not df_asis.empty and "Fecha_Servicio" in df_asis.columns and "ID_Paciente" in df_asis.columns:
+                for _, ra in df_asis.iterrows():
+                    pid_a = str(ra.get("ID_Paciente", "")).strip()
+                    f_a = _extraer_fecha(ra.get("Fecha_Servicio", ""))
+                    if pid_a and f_a:
+                        if pid_a not in primera_asis or f_a < primera_asis[pid_a]:
+                            primera_asis[pid_a] = f_a
+
+            # Buscar columna de fecha de creación en CRONOGRAMA (Marca_Temporal o columna 6)
+            col_marca = None
+            for col in fijos.columns:
+                if "marca" in str(col).lower() or "fecha" in str(col).lower() or "timestamp" in str(col).lower():
+                    col_marca = col
+                    break
+            if col_marca is None and len(fijos.columns) >= 6:
+                col_marca = fijos.columns[5]
+
+            if col_marca is not None:
+                indices_validos = []
+                for idx_f, rf in fijos.iterrows():
+                    pid_f = str(rf.get("ID_Paciente", "")).strip()
+                    f_alta = _extraer_fecha(rf.get(col_marca, ""))
+                    
+                    if f_alta is None:
+                        indices_validos.append(idx_f)
+                    elif fecha_sel > f_alta:
+                        # El día evaluado es posterior al día en que se cargó el cronograma
+                        indices_validos.append(idx_f)
+                    elif fecha_sel == f_alta:
+                        # Si se cargó el mismo día (ej. viernes para empezar el lunes),
+                        # solo cuenta ese mismo día si ya tuvo registro de asistencia hoy
+                        tiene_asis_hoy = False
+                        if not df_asis.empty:
+                            tiene_asis_hoy = (
+                                (df_asis["Fecha_Servicio"].astype(str).str.strip() == fecha_str) &
+                                (df_asis["ID_Paciente"].astype(str).str.strip() == pid_f)
+                            ).any()
+                        if tiene_asis_hoy or (pid_f in primera_asis and primera_asis[pid_f] <= fecha_sel):
+                            indices_validos.append(idx_f)
+                    else:
+                        # fecha_sel < f_alta: solo incluir si el paciente ya tenía asistencias previas
+                        # (lo que significa que era un paciente antiguo al que solo se le editó el cronograma)
+                        if pid_f in primera_asis and primera_asis[pid_f] <= fecha_sel:
+                            indices_validos.append(idx_f)
+                fijos = fijos.loc[indices_validos]
 
     # Excepciones del día
     cancel_ids, agregados = set(), pd.DataFrame()
