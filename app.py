@@ -553,6 +553,30 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
     if not fijos.empty and cancel_ids:
         fijos = fijos[~fijos["ID_Paciente"].astype(str).str.strip().isin(cancel_ids)]
 
+    # Excluir pacientes suspendidos
+    if not df_pac.empty and "Estado" in df_pac.columns and not fijos.empty:
+        p_susp = df_pac.copy()
+        p_susp["_id"] = p_susp["ID_Paciente"].astype(str).str.strip()
+        p_susp["_est"] = p_susp["Estado"].astype(str).str.strip().str.upper()
+        susp_ids = set(p_susp.loc[p_susp["_est"] == "SUSPENDIDO", "_id"])
+
+        if susp_ids:
+            if fecha_sel >= hoy_arg:
+                fijos = fijos[~fijos["ID_Paciente"].astype(str).str.strip().isin(susp_ids)]
+            else:
+                ids_a_excluir = set()
+                for pid in susp_ids:
+                    tuvo_asistencia = False
+                    if not df_asis.empty and "Fecha_Servicio" in df_asis.columns:
+                        tuvo_asistencia = (
+                            (df_asis["Fecha_Servicio"].astype(str).str.strip() == fecha_str) &
+                            (df_asis["ID_Paciente"].astype(str).str.strip() == pid)
+                        ).any()
+                    if not tuvo_asistencia:
+                        ids_a_excluir.add(pid)
+                if ids_a_excluir:
+                    fijos = fijos[~fijos["ID_Paciente"].astype(str).str.strip().isin(ids_a_excluir)]
+
     # Unificar
     registros = []
     for _, r in fijos.iterrows():
@@ -598,6 +622,9 @@ def calcular_universo_diario(fecha_sel, df_cron, df_exc, df_pac, df_asis):
         a["_f"] = a["Fecha_Servicio"].astype(str).str.strip()
         a["_id"] = a["ID_Paciente"].astype(str).str.strip()
         a["_t"] = a["Turno"].astype(str).str.strip()
+        if "Marca_Temporal" in a.columns:
+            a["_ts"] = pd.to_datetime(a["Marca_Temporal"], dayfirst=True, errors="coerce")
+            a = a.sort_values("_ts", kind="stable", na_position="first")
         ah = a[a["_f"] == fecha_str]
 
         for idx, row in df.iterrows():
